@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors'); 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
 
 const criarTabelas = require('./initDatabase');
 
@@ -35,5 +35,5 @@ app.use('/settings', settingsRoutes); // <-- [NOVO] Registra as rotas sob o pref
 
 // --- Arranque do Servidor ---
 app.listen(PORT, () => {
-  console.log(`Servidor a correr em http://localhost:${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

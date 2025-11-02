@@ -1,6 +1,5 @@
 // Define a URL base para todas as chamadas à API, facilitando futuras alterações.
-const BASE_URL = 'http://localhost:3000';
-
+const BASE_URL = `${import.meta.env.VITE_API_URL}`;
 /**
  * [NOVA FUNÇÃO] Verifica se um jogador tem um progresso ativo para continuar.
  * É a primeira função a ser chamada após o login para decidir qual botão mostrar.

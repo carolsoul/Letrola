@@ -1,6 +1,5 @@
 // A URL base do seu servidor backend.
-const BASE_URL = 'http://localhost:3000/cacapalavras';
-
+const BASE_URL = `${import.meta.env.VITE_API_URL}/cacapalavras`;
 /**
  * Busca a lista de palavras para um nível específico do caça-palavras.
  * @param {number} mundo - O número do mundo (ex: 4).

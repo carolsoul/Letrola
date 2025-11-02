@@ -1,3 +1,6 @@
+// 1. Pega a URL base do seu arquivo .env
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 /**
  * Busca todos os itens (e as letras associadas) de uma fase específica.
  * @param {number} mundo O número do mundo cujos itens devem ser buscados.
@@ -6,9 +9,11 @@
  */
 async function buscarItensPorFase(mundo, fase) {
   try {
+    // 2. A URL agora é dinâmica, usando a variável de ambiente
     const response = await fetch(
-      `http://localhost:3000/itens-fase/${mundo}/${fase}`
+      `${API_BASE_URL}/itens-fase/${mundo}/${fase}`
     ); // A rota pode retornar 400 (ID inválido) ou 404 (nenhum item encontrado)
+    
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(

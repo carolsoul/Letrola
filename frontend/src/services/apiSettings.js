@@ -2,7 +2,7 @@
 
 // A URL base do seu servidor backend.
 // Mude para o endereço do seu servidor de produção quando for o caso.
-const BASE_URL = 'http://localhost:3000/settings';
+const BASE_URL = `${import.meta.env.VITE_API_URL}/settings`;
 
 /**
  * Busca as configurações de áudio de um jogador específico.

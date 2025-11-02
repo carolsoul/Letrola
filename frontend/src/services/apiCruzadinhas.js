@@ -1,6 +1,6 @@
 // frontend/src/services/apiCruzadinhas.js
 
-const BASE_URL = 'http://localhost:3000/cruzadinhas';
+const BASE_URL = `${import.meta.env.VITE_API_URL}/cruzadinhas`;
 
 /**
  * Busca a estrutura de uma cruzadinha (palavras, dicas, posições) para uma fase específica.

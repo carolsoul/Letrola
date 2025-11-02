@@ -1,6 +1,5 @@
 // A URL base da sua API. Altere se o seu back-end estiver rodando em outro endereço.
-const BASE_URL = 'http://localhost:3000/jogadores';
-
+const BASE_URL = `${import.meta.env.VITE_API_URL}/jogadores`;
 /**
  * Cria um novo jogador no banco de dados.
  * @param {string} nome - O nome do jogador a ser criado.
