@@ -69,6 +69,12 @@
   width: 40rem;
 }
 
+.puzzle-bebida-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
 .vara-container {
   position: absolute;
   top: 1rem;
