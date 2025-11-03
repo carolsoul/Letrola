@@ -1,0 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@300..700&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- Telas de Carregamento/Erro --- */
+.loading-screen-2, .error-screen-2 {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    color: white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: 'Bangers', sans-serif;
+    background-color: #f0f0f0;
+    background-image: url('/loading-bear.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.level-container-mundo2 {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  cursor: none;
+}
+
+.ponta-vara-origem {
+  position: absolute;
+  top: 13%;
+  left: 62%;  
+  width: 1px;
+  height: 1px;
+  color: #763918;
+}
+
+.level-bg-mundo2 {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+}
+
+.mundo-2-puzzle-bg{
+  top: 10%;
+}
+
+.mundo-2-puzzle-content{
+  top: 40%;
+}
+
+.mundo-2-puzzle-content .modal-title{
+  top: 30%;
+}
+
+.mundo-2-puzzle-content .balao-dicas{
+  transform: translate(3rem, -3rem);
+}
+
+.mundo-2-puzzle-content .baloon{
+  width: 40rem;
+}
+
+.vara-container {
+  position: absolute;
+  top: 1rem;
+  left: 0.3rem;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.anzol {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  transform: translate(-55%, -30%); 
+  pointer-events: none;
+  z-index: 11;
+}
+
+/* A linha de pesca */
+.linha-pesca {
+  position: absolute;
+  width: 1px;
+  background-color: #774504;
+  transform-origin: top left;
+}
+
+.bebida-flutuante {
+  z-index: 5;
+  position: absolute;
+  bottom: 5%;
+  width: 55px;
+  cursor: none;
+  animation: flutuar 8s ease-in-out infinite;
+  transition: transform 0.2s ease;
+  pointer-events: auto;
+}
+
+.bebida-flutuante:hover {
+    transform: scale(1.1);
+}
+
+@keyframes flutuar {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25px) rotate(5deg);
+  }
+}
+
+/* ESTILOS RESPONSIVOS*/
+@media(width: 1280px){
+  .vara-container{
+    top: 6rem;
+  }
+}
+
+@media (height: 1366px) {
+  .vara-container{
+    top: 10rem;
+  }
+}
+
+@media (width: 1024px){
+  .fruit-slots{
+    margin-top: 11rem;
+  }
+
+  .vara-container{
+    top: 3.8rem;
+  }
+}
+
+@media (width: 820px) {
+  .vara-container{
+    top: 11.8rem;
+    left: 6.2rem;
+  }
+}
+
+@media (width: 768px) {
+  .vara-container{
+    top: 10rem;
+    left: 5rem;
+  }
+}
+
