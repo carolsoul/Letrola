@@ -112,10 +112,6 @@
   object-fit: contain;
 }
 
-.puzzle-bebida-img{
-  margin: 18rem 0 3rem ;
-}
-
 .fruit-slots{
   display: grid;
   justify-items: center;
