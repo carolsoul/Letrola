@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import "../styles/Fase.css";
+import "../styles/Mundo2.css";
 import Modal from "./Modal.jsx";
 import Cronometro from "./Cronometro.jsx";
 import ScoreDisplay from './ScoreDisplay.jsx';
