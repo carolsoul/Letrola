@@ -364,8 +364,14 @@
     .mundo-1-layout .level-1{top: 80%; left: 60%;}
     .mundo-1-layout .level-2{left: 15%;}
     .mundo-1-layout .level-3{top: 28%; right: 38%;}
-    .mundo-1-layout .level-4{right: 25%; top: 20%;}
+    .mundo-1-layout .level-4{right: 25%; top: 20% !important;}
     .mundo-1-layout .level-5{top: 5%; right: 25%;}
+
+    .mundo-2-layout .level-1{ top: 85%;  left: 53%;}
+    .mundo-2-layout .level-2{top: 55%; left: 15%;}
+    .mundo-2-layout .level-3{top: 45%; right: 40%;}
+    .mundo-2-layout .level-4{right: 43%; top: 20%;}
+    .mundo-2-layout .level-5{top: 10%; right: 30%;}
 
     .mundo-3-layout .level-2{ top: 60%; left: 35%;}
     .mundo-3-layout .level-3{ top: 50%; right: 15%;}
