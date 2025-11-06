@@ -444,12 +444,6 @@
         height: fit-content;
     }
 
-    .seconds{
-    font-size: 1.2rem;
-    right: 14%;
-    top: 42%
-    }
-
     .cruzadinha-main-content {
         margin-top: 50px;
     }
@@ -470,9 +464,9 @@
 
     /* Reduz ainda mais a grade */
     .cruzadinha-grid-container {
-        transform: scale(0.7);
+        transform: scale(0.5);
         top: 22rem;
-        left: -1rem;
+        left: -4rem;
         position: fixed;
     }
 }
