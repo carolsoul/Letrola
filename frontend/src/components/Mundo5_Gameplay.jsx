@@ -1,210 +1,265 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { useAudio } from '../hooks/useAudio';
-import Cronometro from './Cronometro.jsx';
-import '../styles/Mundo5.css'; // Usando o novo CSS
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Modal from "./Modal.jsx";
+import Cronometro from "./Cronometro.jsx";
+import ScoreDisplay from "./ScoreDisplay.jsx"
+import { buscarDeckDaFase } from "../services/apiMemoria.js";
+import { useAudio } from "../hooks/useAudio";
+import TutorialModal from "./TutorialModal.jsx";
+import { tutorials } from "../data/tutorialData.js";
+import '../styles/Mundo5.css';
 
-// --- Constantes de Pontuação ---
-const TEMPO_3_ESTRELAS = 60;
-const TEMPO_2_ESTRELAS = 180;
-const TEMPO_1_ESTRELA = 300;
+// --- Constantes ---
+const MUNDO_ID = 5;
+const TEMPO_3_ESTRELAS = 60;  // 1 minuto
+const TEMPO_2_ESTRELAS = 120; // 2 minutos
+const TEMPO_1_ESTRELA = 180; // 3 minutos
 
-// --- Dados Mockados (Substitua pela API quando pronto) ---
-const mockItens = [
-    { id: 1, resposta: 'MAÇÃ', imagem_url: '/maca.svg' },
-    { id: 2, resposta: 'BANANA', imagem_url: '/banana.svg' },
-    { id: 3, resposta: 'UVA', imagem_url: '/uva.svg' },
-    { id: 4, resposta: 'LARANJA', imagem_url: '/laranja.svg' },
-    { id: 5, resposta: 'PERA', imagem_url: '/pera.svg' },
-];
-
-/**
- * Cria e embaralha as cartas do jogo.
- * Para cada item, cria uma carta de IMAGEM e uma carta de TEXTO com o mesmo parId.
- */
-function embaralharCartas(itens) {
-    const cartasDoJogo = [];
-
-    itens.forEach((item) => {
-        const parId = item.id;
-        // Carta de Imagem
-        cartasDoJogo.push({
-            id: Math.random(),
-            tipo: 'imagem',
-            conteudo: item.imagem_url,
-            parId: parId,
-            isFlipped: false,
-            isMatched: false,
-        });
-        // Carta de Texto
-        cartasDoJogo.push({
-            id: Math.random(),
-            tipo: 'texto',
-            conteudo: item.resposta.toUpperCase(),
-            parId: parId,
-            isFlipped: false,
-            isMatched: false,
-        });
-    });
-
-    return cartasDoJogo.sort(() => Math.random() - 0.5);
-}
-
-// Função para calcular estrelas (necessária para onFaseCompleta)
-const calcularEstrelas = (tempoSegundos) => {
-    if (tempoSegundos <= TEMPO_3_ESTRELAS) return 3;
-    if (tempoSegundos <= TEMPO_2_ESTRELAS) return 2;
-    if (tempoSegundos <= TEMPO_1_ESTRELA) return 1;
-    return 0;
+// --- Função Utilitária ---
+const formatTime = (timeInMs) => {
+    const totalSeconds = Math.floor(timeInMs / 1000);
+    const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const sec = String(totalSeconds % 60).padStart(2, "0");
+    return `${min}:${sec}`;
 };
 
+// --- Sub-componente Card ---
+const Card = ({ card, onClick, isFlipped, isMatched }) => {
+    const handleClick = () => {
+        if (!isFlipped && !isMatched) {
+            onClick(card);
+        }
+    };
+
+    return (
+        <div className={`memoria-card ${isFlipped || isMatched ? 'is-flipped' : ''} ${isMatched ? 'is-matched' : ''}`} onClick={handleClick}>
+            <div className="card-face card-back">
+                <img src="/verso.svg" alt="Verso" />
+            </div>
+            <div className="card-face card-front">
+                {card.tipo === 'imagem' ? (
+                    <img src={card.conteudo} alt={card.identificador} className="card-image" />
+                ) : (
+                    <span className="card-text">{card.conteudo}</span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// --- Componente Principal ---
 function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
     const { mundoId, faseId } = useParams();
-    const { playSound } = useAudio();
+    const navigate = useNavigate();
+    const { playSound, isMusicMuted, toggleMusic, isSfxMuted, toggleSfx } = useAudio();
 
-    const [cartas, setCartas] = useState([]);
-    const [selecionadas, setSelecionadas] = useState([]); // Antes "viradas"
-    const [bloqueado, setBloqueado] = useState(false);
-    const [estadoJogo, setEstadoJogo] = useState('carregando');
+    const mundo_id = parseInt(mundoId);
+    const fase_id = parseInt(faseId);
 
-    // States do Cronômetro
-    const [tempoInicioFase, setTempoInicioFase] = useState(0);
-    const [tempoDecorrido, setTempoDecorrido] = useState(0);
+    // --- Estados ---
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+    const [estadoJogo, setEstadoJogo] = useState("carregando");
+    const [isConfigOpen, setIsConfigOpen] = useState(false);
+    const [tempoInicioFase, setTempoInicioFase] = useState(Date.now());
+    const [tempoDecorridoParaScore, setTempoDecorridoParaScore] = useState(0);
+    const [tempoExibido, setTempoExibido] = useState("00:00"); 
+    const [cards, setCards] = useState([]);
+    const [flippedCards, setFlippedCards] = useState([]);
+    const [matchedCards, setMatchedCards] = useState([]);
+    const [tentativas, setTentativas] = useState(0);
+    const [isChecking, setIsChecking] = useState(false);
+    const timerRef = useRef(null); 
 
-    // Inicializa ou reinicia o jogo
-    const inicializarFase = useCallback(() => {
-        setEstadoJogo('carregando');
-        // const itens = await buscarItensPorFase(mundoId, faseId); // TODO: Descomentar quando a API estiver pronta
-        const itens = mockItens; // Usando dados mockados por enquanto
+    // Efeito para música e tutorial
+    useEffect(() => {
+        const audio = playSound('musica-mundo-5', true) || playSound('musica-mundo-1', true); 
+        return () => { if (audio) audio.pause(); };
+    }, [playSound]);
 
-        setCartas(embaralharCartas(itens));
-        setSelecionadas([]);
-        setBloqueado(false);
+    useEffect(() => {
+        if (fase_id === 1) {
+            const storageKey = `tutorial_mundo_${mundo_id}_visto`;
+            const tutorialJaVisto = sessionStorage.getItem(storageKey);
+            if (!tutorialJaVisto) setIsTutorialOpen(true);
+        }
+    }, [mundo_id, fase_id]);
+
+    // Carregar o deck
+    const inicializarFase = useCallback(async () => {
+        setEstadoJogo("carregando");
+        setCards([]);
+        setFlippedCards([]);
+        setMatchedCards([]);
+        setTentativas(0);
+        setIsChecking(false);
+        clearTimeout(timerRef.current);
+
         setTempoInicioFase(Date.now());
-        setTempoDecorrido(0);
-        setEstadoJogo('jogando');
-    }, [mundoId, faseId]);
+        setTempoDecorridoParaScore(0);
+        setTempoExibido("00:00");
 
-    // Efeito para carregar o jogo na primeira vez
-    useEffect(() => {
-        inicializarFase();
-    }, [inicializarFase]);
-
-    // Efeito para checar os pares
-    useEffect(() => {
-        if (selecionadas.length === 2) {
-            setBloqueado(true);
-            const [primeira, segunda] = selecionadas;
-
-            // Lógica de acerto (baseada no parId, não no conteúdo)
-            if (primeira.parId === segunda.parId) {
-                playSound('fase-acerto');
-                setCartas((prev) =>
-                    prev.map((c) =>
-                        c.parId === primeira.parId ? { ...c, isMatched: true } : c
-                    )
-                );
-                setSelecionadas([]);
-                setBloqueado(false);
-            } else {
-                // Lógica de erro
-                playSound('fase-erro');
-                setTimeout(() => {
-                    setCartas((prev) =>
-                        prev.map((c) =>
-                            c.id === primeira.id || c.id === segunda.id
-                                ? { ...c, isFlipped: false }
-                                : c
-                        )
-                    );
-                    setSelecionadas([]);
-                    setBloqueado(false);
-                }, 1200); // Tempo um pouco maior para ver o texto/imagem
-            }
-        }
-    }, [selecionadas, playSound]);
-
-    // Efeito para checar a vitória
-    useEffect(() => {
-        if (cartas.length > 0 && estadoJogo === 'jogando') {
-            const todosEncontrados = cartas.every((c) => c.isMatched);
-
-            if (todosEncontrados) {
-                setEstadoJogo('finalizado');
-                const tempoFinalSegundos = Math.floor(tempoDecorrido / 1000);
-                const estrelas = calcularEstrelas(tempoFinalSegundos);
-
-                setTimeout(() => {
-                    if (onFaseCompleta) {
-                        onFaseCompleta({ estrelas, tempoConclusao: tempoFinalSegundos });
-                    }
-                }, 500);
-            }
-        }
-    }, [cartas, estadoJogo, onFaseCompleta, tempoDecorrido]);
-
-    const virarCarta = (carta) => {
-        // Não faz nada se:
-        // 1. O jogo estiver bloqueado
-        // 2. A carta já estiver virada
-        // 3. A carta já for um par encontrado
-        // 4. Já houver 2 cartas selecionadas
-        if (bloqueado || carta.isFlipped || carta.isMatched || selecionadas.length === 2) {
+        if (isTutorialOpen) {
+            setEstadoJogo("jogando"); // Fica jogando, mas pausado pelo tutorial
             return;
         }
 
-        // Lógica de virar a carta
-        const novaCarta = { ...carta, isFlipped: true };
-        setCartas((prev) =>
-            prev.map((c) => (c.id === carta.id ? novaCarta : c))
-        );
-        setSelecionadas((prev) => [...prev, novaCarta]);
+        const deckDaApi = await buscarDeckDaFase(mundo_id, fase_id);
+        if (deckDaApi) {
+            setCards(deckDaApi);
+            setEstadoJogo("jogando");
+        } else {
+            console.error("Não foi possível carregar o deck da fase.");
+            setEstadoJogo("erro");
+        }
+    }, [mundo_id, fase_id, isTutorialOpen]);
+
+    useEffect(() => {
+        if (!jogador) navigate("/");
+        else inicializarFase();
+    }, [jogador, navigate, inicializarFase]);
+
+    // Lógica de verificação de pares
+    useEffect(() => {
+        if (flippedCards.length === 2) {
+            setIsChecking(true);
+            setTentativas(t => t + 1);
+            const [card1, card2] = flippedCards;
+
+            if (card1.identificador === card2.identificador) {
+                playSound('fase-acerto');
+                setMatchedCards(prev => [...prev, card1.id, card2.id]);
+                setFlippedCards([]);
+                setIsChecking(false);
+            } else {
+                playSound('fase-erro');
+                timerRef.current = setTimeout(() => {
+                    setFlippedCards([]);
+                    setIsChecking(false);
+                }, 1200);
+            }
+        }
+        return () => clearTimeout(timerRef.current);
+    }, [flippedCards, playSound]);
+
+    // Lógica de finalização
+    const finalizarFase = useCallback((motivo = 'concluido') => {
+        if (estadoJogo === "finalizado") return;
+        setEstadoJogo("finalizado");
+        
+        const tempoFinalSegundos = Math.floor(tempoDecorridoParaScore / 1000);
+        let estrelas = 0;
+        
+        if (motivo !== 'tempo_esgotado') {
+            if (tempoFinalSegundos <= TEMPO_3_ESTRELAS) estrelas = 3;
+            else if (tempoFinalSegundos <= TEMPO_2_ESTRELAS) estrelas = 2;
+            else if (tempoFinalSegundos <= TEMPO_1_ESTRELA) estrelas = 1;
+        }
+        onFaseCompleta({ estrelas, tempoConclusao: tempoFinalSegundos });
+    }, [estadoJogo, onFaseCompleta, tempoDecorridoParaScore]); // ✅ Dependência atualizada
+
+    useEffect(() => {
+        if (cards.length > 0 && matchedCards.length === cards.length) {
+            setTimeout(() => finalizarFase('concluido'), 500);
+        }
+    }, [matchedCards, cards, finalizarFase]);
+
+    const handleCardClick = (card) => {
+        if (isChecking || flippedCards.length >= 2 || flippedCards.some(c => c.id === card.id) || estadoJogo !== 'jogando') return;
+        
+        playSound('click');
+        setFlippedCards(prev => [...prev, card]);
     };
 
-    if (estadoJogo === 'carregando') {
-        return <div className="loading-screen-1">Carregando Jogo da Memória...</div>;
-    }
+    const handleCloseTutorial = () => {
+        sessionStorage.setItem(`tutorial_mundo_${mundo_id}_visto`, 'true');
+        setIsTutorialOpen(false);
+        setEstadoJogo("jogando");
+        setTempoInicioFase(Date.now());
+    };
+
+    const onTempoTick = (tempoMs) => {
+        setTempoExibido(formatTime(tempoMs, "ms"));
+        setTempoDecorridoParaScore(tempoMs);
+    };
+
+    // Handlers do Modal de Configuração
+    const handleOpenConfig = () => { playSound('click'); setIsConfigOpen(true); };
+    const handleVoltarAoMapa = () => { playSound('click'); navigate("/mapa-do-jogo", { state: { jogador, mundo_id: MUNDO_ID } }); };
+    const handlePausar = () => { playSound('click'); setEstadoJogo(estadoJogo === 'jogando' ? 'pausado' : 'jogando'); };
+    const handleRetry = () => { playSound('click'); inicializarFase(); };
+    const handleNavigateAjuda = () => { playSound('click'); navigate('/ajuda'); };
+    const handleCloseConfig = () => { playSound('click'); setIsConfigOpen(false); };
+
+    // --- Determinar layout da grade ---
+    const getGridClassName = (count) => {
+        if (count <= 8) return 'grid-4x2';   // Fase 1 (4 pares = 8 cartas)
+        if (count <= 12) return 'grid-4x3';  // Fase 2 (6 pares = 12 cartas)
+        if (count <= 16) return 'grid-4x4';  // Fase 3 (8 pares = 16 cartas)
+        if (count <= 20) return 'grid-5x4';  // Fase 4 (10 pares = 20 cartas)
+        return 'grid-6x4'; // Fase 5 (12 pares = 24 cartas)
+    };
+
+    if (estadoJogo === "carregando") return <div className="loading-screen-5">Carregando Jogo da Memória...</div>;
+    if (estadoJogo === "erro") return <div className="error-screen-5">Erro ao carregar o Jogo da Memória.</div>;
 
     return (
-        <section className="mundo5-container">
-            {estadoJogo === 'jogando' && (
+        <section className="mundo5-section">
+            <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} steps={tutorials[mundo_id]} />
+            
+            {/* ✅ Cabeçalho corrigido para o Mundo 5 */}
+            <header >
+                <button className="level-settings-btn" onClick={handleOpenConfig}><img src="/Settings.svg" alt="Configurações" /></button>
+                <div className="two-columns">
+                    <ScoreDisplay
+                          tempoDecorridoMs={tempoDecorridoParaScore}
+                        />
+
+                <div className="tentativas-contador">
+                    <p>Tentativas: <span>{tentativas}</span></p>
+                </div>
+                </div>
+
+                <div className="timer">
+                    <img src="/timer.svg" alt="Cronômetro" />
+                    <p className="seconds">{tempoExibido}</p>
+                </div>
+            </header>
+
+            {(estadoJogo === "jogando" || estadoJogo === "pausado") && (
                 <Cronometro
-                    isPaused={estadoJogo !== 'jogando'}
+                    isPaused={estadoJogo !== 'jogando' || isTutorialOpen || isChecking}
                     tempoInicioFase={tempoInicioFase}
                     limiteTempoFase={TEMPO_1_ESTRELA * 1000}
-                    onTempoTick={(tempoMs) => setTempoDecorrido(tempoMs)}
-                    onFaseTermina={() => {
-                        if (onFaseCompleta) {
-                            onFaseCompleta({ estrelas: 0, tempoConclusao: TEMPO_1_ESTRELA });
-                        }
-                    }}
+                    onTempoTick={onTempoTick}
+                    onFaseTermina={() => finalizarFase('tempo_esgotado')}
                 />
             )}
 
-            <div className="jogo-memoria-grid">
-                {cartas.map((carta) => (
-                    <div
-                        key={carta.id}
-                        className={`card ${carta.isFlipped || carta.isMatched ? 'flipped' : ''}`}
-                        onClick={() => virarCarta(carta)}
-                    >
-                        <div className="cardInner">
-                            {/* CONTEÚDO (o que é revelado ao virar) */}
-                            <div className="cardFront">
-                                {carta.tipo === 'imagem' ? (
-                                    <img src={carta.conteudo} alt="Conteúdo da carta" className="carta-imagem" />
-                                ) : (
-                                    <div className="carta-texto">{carta.conteudo}</div>
-                                )}
-                            </div>
-                            {/* CAPA (o que fica visível inicialmente) */}
-                            <div className="cardBack">
-                                <img src="/verso.svg" alt="Verso da carta" className="carta-capa" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <main className="mundo5-main">
+                <div className={`memoria-grid ${getGridClassName(cards.length)}`}>
+                    {cards.map(card => (
+                        <Card
+                            key={card.id}
+                            card={card}
+                            onClick={handleCardClick}
+                            isFlipped={flippedCards.some(c => c.id === card.id)}
+                            isMatched={matchedCards.includes(card.id)}
+                        />
+                    ))}
+                </div>
+            </main>
+
+            <Modal isOpen={isConfigOpen} onClose={handleCloseConfig} variant="config">
+                <div className="btn-level-grid">
+                    <button className={`btn music-btn ${isMusicMuted ? 'grayscale' : ''}`} onClick={toggleMusic}><div></div> música</button>
+                    <button className={`btn effect-btn ${isSfxMuted ? 'grayscale' : ''}`} onClick={toggleSfx}><div></div> efeitos</button>
+                    <button className="btn map-btn" onClick={handleVoltarAoMapa}><div></div>🏠</button>
+                    <button className="btn stop-btn" onClick={handlePausar}><div></div>{estadoJogo === 'pausado' ? '▶' : '⏸'}</button>
+                    <button className="btn retry-btn" onClick={handleRetry}><div></div>↩</button>
+                    <button className="btn help-btn" onClick={handleNavigateAjuda}><div></div> ajuda</button>
+                    <button className="btn skip-btn" onClick={handleCloseConfig}><div></div> fechar</button>
+                </div>
+            </Modal>
         </section>
     );
 }
