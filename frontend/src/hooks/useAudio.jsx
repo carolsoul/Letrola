@@ -6,6 +6,7 @@ const soundMap = {
   'musica-mundo-2': '/musica-mundo-2.mp3',
   'musica-mundo-3': '/musica-mundo-3.mp3',
   'musica-mundo-4': '/musica-mundo-4.mp3',
+  'musica-mundo-5': '/musica-mundo-4.mp3',
   click: '/click.mp3',
   vitoria: '/vitoria.mp3',
   derrota: '/derrota.mp3',
