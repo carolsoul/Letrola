@@ -22,6 +22,9 @@ const jogadoresRoutes = require('./routes/jogadores');
 const cruzadinhasRoutes = require('./routes/cruzadinhas');
 const cacapalavrasRoutes = require('./routes/cacapalavras');
 const settingsRoutes = require('./routes/settings'); // <-- [NOVO] Carrega o arquivo de rotas de configurações.
+const memoriaRoutes = require('./routes/memoria');
+const bonusRoutes = require('./routes/bonus');
+const desafioBonusRoutes = require('./routes/desafioBonus');
 
 // --- Registo das Rotas com Prefixos ---
 app.use('/progresso', progressoRoutes);
@@ -32,6 +35,9 @@ app.use('/jogadores', jogadoresRoutes);
 app.use('/cruzadinhas', cruzadinhasRoutes);
 app.use('/cacapalavras', cacapalavrasRoutes);
 app.use('/settings', settingsRoutes); // <-- [NOVO] Registra as rotas sob o prefixo '/settings'.
+app.use('/memoria', memoriaRoutes);
+app.use('/bonus', bonusRoutes);
+app.use('/desafio-bonus', desafioBonusRoutes);
 
 // --- Arranque do Servidor ---
 app.listen(PORT, () => {
