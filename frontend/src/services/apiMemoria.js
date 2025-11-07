@@ -1,7 +1,7 @@
 // Local: src/services/apiMemoria.js
 
 // A URL base do seu servidor backend.
-const BASE_URL = 'http://localhost:3000/memoria'; // A rota que vamos criar no server.js
+const BASE_URL = `${import.meta.env.VITE_API_URL}/memoria`; // A rota que vamos criar no server.js
 
 /**
  * Busca o deck de cartas (já duplicado e embaralhado) para um nível do Jogo da Memória.
