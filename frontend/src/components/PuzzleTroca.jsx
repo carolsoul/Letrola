@@ -40,10 +40,7 @@ function PuzzleTroca({ palavraCorreta, onComplete }) {
         return letrasEmbaralhadas[indexLetraEmbaralhada++];
     });
     
-    // ✅ LÓGICA ATUALIZADA AQUI: Verifica as posições corretas logo no início
     const arrayVerificado = arrayEmbaralhado.map((item, index) => {
-        // Se o caractere na posição atual for igual ao da palavra correta,
-        // marca como 'estaCorreta'. Isso já "trava" as letras que começam no lugar certo.
         if (item.char === palavraCorreta[index]) {
             return { ...item, estaCorreta: true };
         }
