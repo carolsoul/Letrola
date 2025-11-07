@@ -304,6 +304,13 @@
 .mundo-4-layout .level-4 { top: 10%;  right: 40%; cursor: pointer; }
 .mundo-4-layout .level-5 { top: 2%; right: 48%; cursor: pointer; }
 
+/* --- Layout de posições para o Mundo 5 --- */
+.mundo-5-layout .level-1 { top: 80%; left: 55%; cursor: pointer; }
+.mundo-5-layout .level-2 { top: 55%; left: 20%; cursor: pointer; }
+.mundo-5-layout .level-3 { top: 35%; right: 25%; cursor: pointer; }
+.mundo-5-layout .level-4 { top: 8%;  right: 30%; cursor: pointer; }
+.mundo-5-layout .level-5 { bottom: 0%; right: 36%; cursor: pointer; }
+
 
 .locked{
     filter: grayscale(100%);
@@ -333,6 +340,7 @@
 }
 
 /* Media Queries para iPad Pro*/
+
 @media (height: 1366px) {
     .level img{
         height: 135px;  
@@ -383,6 +391,12 @@
     .mundo-4-layout .level-3 { top: 28% !important; right: 42% !important; }
     .mundo-4-layout .level-4 { top: 17% !important;  right: 27% !important; }
     .mundo-4-layout .level-5 { top: 5% !important; right: 20% !important; }
+
+    .mundo-5-layout .level-1{top: 80%; left: 60%;}
+    .mundo-5-layout .level-2{left: 15%;}
+    .mundo-5-layout .level-3{top: 28%; right: 38%;}
+    .mundo-5-layout .level-4{right: 25%; top: 20% !important;}
+    .mundo-5-layout .level-5{top: 5%; right: 25%;}
     
     .historia-imagem {
         width: -webkit-fill-available;
@@ -413,6 +427,12 @@
     .mundo-4-layout .level-3 { top: 30%; right: 26%; }
     .mundo-4-layout .level-4 { top: 16%;  right: 30%; }
     .mundo-4-layout .level-5 { top: 2%; right: 38%; }
+
+    .mundo-5-layout .level-1{ top: 80%; left: 55%;}
+    .mundo-5-layout .level-2{ left: 20%;} 
+    .mundo-5-layout .level-3{ top: 35%; right: 25%;}
+    .mundo-5-layout .level-4{ right: 32%; top: 18%;}
+    .mundo-5-layout .level-5{ top: 5%; right: 38%;}
 }
 
 @media (width: 1024px) {
@@ -469,6 +489,12 @@
     .mundo-4-layout .level-4 { top: 19%;  right: 30%; }
     .mundo-4-layout .level-5 { top: 5%; right: 25%; }
 
+    .mundo-5-layout .level-1{top: 85%; left: 50%;}
+    .mundo-5-layout .level-2{left: 15%;}
+    .mundo-5-layout .level-3{top: 28%; right: 38%;}
+    .mundo-5-layout .level-4{right: 25%; top: 20%;}
+    .mundo-5-layout .level-5{top: 5%; right: 25%;}  
+
     .historia-imagem {
         width: -webkit-fill-available;
         height: -webkit-fill-available;
@@ -507,6 +533,12 @@
     .mundo-4-layout .level-3 { top: 28%; right: 40%; }
     .mundo-4-layout .level-4 { top: 19%;  right: 30%; }
     .mundo-4-layout .level-5 { top: 5%; right: 25%; }
+
+    .mundo-5-layout .level-1{left: 60%;}
+    .mundo-5-layout .level-2{top: 57%; left: 15%;}    
+    .mundo-5-layout .level-3{top: 28%; right: 35%;}
+    .mundo-5-layout .level-4{right: 20%; top: 20%;}
+    .mundo-5-layout .level-5{top: 3%; right: 30%;}
 
     .historia-imagem {
         width: max-content;
@@ -563,6 +595,12 @@
     .mundo-4-layout .level-3 { top: 55%; right: 20%; }
     .mundo-4-layout .level-4 { top: 20%;  right: 50%; }
     .mundo-4-layout .level-5 { top: 13%; right: 25%; }
+
+    .mundo-5-layout .level-1{left: 60%;}
+    .mundo-5-layout .level-2{left: 10%;}
+    .mundo-5-layout .level-3{top: 23%; right: 35%;}
+    .mundo-5-layout .level-4{left: 0%; top: 15%;}
+    .mundo-5-layout .level-5{right: 25%;}
 
     .historia-imagem {
         width: max-content;
