@@ -3,7 +3,7 @@ export const mundos = {
   1: {
     nome: "Floresta das Frutas",
     mapa: {
-      imagem: "/map.svg", // Imagem de fundo do mapa 1
+      imagem: "/map.svg",
     },
     mensagemFeedback: "Você aprendeu a soletrar os nomes das frutas!",
     historia: [
@@ -28,7 +28,7 @@ export const mundos = {
   2: {
     nome: "Floresta Gelada",
     mapa: {
-      imagem: "/map-2.svg", // Imagem de fundo do mapa 2
+      imagem: "/map-2.svg",
     },
     mensagemFeedback: "Você aprendeu a escrever os nomes das bebidas!",
     historia: [
@@ -53,7 +53,7 @@ export const mundos = {
   3: {
     nome: "Lagoa da Diversão",
     mapa: {
-      imagem: "/map-3.svg", // Imagem de fundo do mapa 2
+      imagem: "/map-3.svg", 
     },
     mensagemFeedback: "Você aprendeu a escrever os nomes das decorações!",
     historia: [
@@ -78,7 +78,7 @@ export const mundos = {
   4: {
     nome: "Savana mágica",
     mapa: {
-      imagem: "/map-4.svg", // Imagem de fundo do mapa 2
+      imagem: "/map-4.svg", 
     },
     mensagemFeedback: "Você encontrou os nomes das sobremesas!",
     historia: [
@@ -97,6 +97,31 @@ export const mundos = {
       {
         imagem: "/tiger-story-4.svg",
         dialogo: "Você me ajuda a encontrar todas as palavras? Assim nossa mesa vai ficar docinha e pronta pra festa!",
+      },
+    ]
+},
+  5: {
+    nome: "Bosque da Raposa",
+    mapa: {
+      imagem: "/map-5.svg",
+    },
+    mensagemFeedback: "Você encontrou todos os pares!",
+    historia: [
+      {
+        imagem: "/fox-story-1.svg",
+        dialogo: "Oi, eu sou a Luma! A raposa mais curiosa e esperta da tundra!",
+      },
+      {
+        imagem: "/fox-story-2.svg",
+        dialogo: "A Festa da Selva está chegando, e eu fiquei responsável por lembrar de tudinho!",
+      },
+      {
+        imagem: "/fox-story-3.svg",
+        dialogo: "Mas... ai, ai... Acabei misturando todos os presentes no meio da grama!",
+      },
+      {
+        imagem: "/fox-story-4.svg",
+        dialogo: "Você me ajuda a encontrar os pares iguais?  Assim tudo vai ficar prontinho pra grande festa!",
       },
     ]
 },
