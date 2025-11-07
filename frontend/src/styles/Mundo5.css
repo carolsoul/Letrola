@@ -69,12 +69,10 @@
 /* --- Grade do Jogo da Memória --- */
 .memoria-grid {
   display: grid;
+  justify-items: center;
   gap: 10px;
-  max-width: 900px;
-  width: 100%;
   margin: 0 auto;
-  padding: 7rem;
-  padding-top: 10rem;
+  padding-top: 8rem;
   max-height: 100%; 
 }
 
@@ -84,11 +82,11 @@
 /* Fase 2 (6 pares = 12 cartas) */
 .grid-4x3 { grid-template-columns: repeat(4, 1fr); }
 /* Fase 3 (8 pares = 16 cartas) */
-.grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+.grid-4x4 { grid-template-columns: repeat(6, 1fr); }
 /* Fase 4 (10 pares = 20 cartas) */
-.grid-5x4 { grid-template-columns: repeat(5, 1fr); }
+.grid-5x4 { grid-template-columns: repeat(7, 1fr); }
 /* Fase 5 (12 pares = 24 cartas) */
-.grid-6x4 { grid-template-columns: repeat(6, 1fr); }
+.grid-6x4 { grid-template-columns: repeat(8, 1fr); }
 
 /* --- Estilo da Carta --- */
 .memoria-card {
@@ -98,6 +96,7 @@
   background-color: transparent;
   border: none;
   position: relative;
+  width: 140px;
 }
 
 .card-face {
@@ -107,7 +106,6 @@
   backface-visibility: hidden;
   transition: transform 0.6s ease;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -127,7 +125,7 @@
 
 /* Frente da carta (escondida por padrão) */
 .card-front {
-  background-color: #fff8e2; /* Fundo creme */
+  background-color: #fff8e2;
   border: 4px solid #4a90e2;
   transform: rotateY(180deg);
   display: flex;
@@ -175,7 +173,44 @@
 }
 
 /* --- Responsividade --- */
-@media (max-width: 768px) {
+@media (width: 1024px) {
+  .memoria-grid { gap: 5px; }
+  .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+  .grid-4x3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5x4 { grid-template-columns: repeat(7, 1fr); }
+  .grid-6x4 { grid-template-columns: repeat(6, 1fr); }
+
+  .memoria-card{
+    width: 100px;
+  }
+
+  .card-back{
+    border: 4px solid #880000;
+  }
+
+  .card-text { font-size: 1rem; }
+  .tentativas-contador p { font-size: 1.4rem; }
+  .tentativas-contador span { font-size: 1.6rem; }
+}
+
+@media (height: 1366px) {
+  .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+  .grid-4x3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
+
+  .memoria-card{
+    width: 170px;
+  }
+
+  .card-text { font-size: 1rem; }
+  .tentativas-contador p { font-size: 1.4rem; }
+  .tentativas-contador span { font-size: 1.6rem; }
+}
+
+@media (max-width: 912px) {
   .memoria-grid { gap: 5px; }
   .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
   .grid-4x3 { grid-template-columns: repeat(3, 1fr); }
@@ -183,21 +218,71 @@
   .grid-5x4 { grid-template-columns: repeat(4, 1fr); }
   .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
 
+  .memoria-card{
+    width: 130px;
+  }
+
   .card-text { font-size: 1rem; }
   .tentativas-contador p { font-size: 1.4rem; }
   .tentativas-contador span { font-size: 1.6rem; }
 }
 
-@media (max-width: 480px) {
-  .memoria-grid { gap: 4px; }
-  /* Ajustes para telas bem pequenas (ex: 12 pares) */
+@media (max-width: 820px) {
+  .memoria-grid { gap: 5px; }
+  .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+  .grid-4x3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5x4 { grid-template-columns: repeat(4, 1fr); }
   .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
+
+  .memoria-card{
+    width: 130px;
+  }
+
+  .card-text { font-size: 1rem; }
+  .tentativas-contador p { font-size: 1.4rem; }
+  .tentativas-contador span { font-size: 1.6rem; }
+}
+
+@media (width: 540px){
+  .memoria-card{
+    width: 85px;
+  }
+
+  .card-back{
+    border: 4px solid #880000;
+  }
+}
+
+@media (max-width: 480px) {
+  .mundo5-main{
+    padding: 0.5rem;
+  }
+
+  /* Fase 1 (4 pares = 8 cartas) */
+  .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+  /* Fase 2 (6 pares = 12 cartas) */
+  .grid-4x3 { grid-template-columns: repeat(4, 1fr); }
+  /* Fase 3 (8 pares = 16 cartas) */
+  .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+  /* Fase 4 (10 pares = 20 cartas) */
+  .grid-5x4 { grid-template-columns: repeat(4, 1fr); }
+  /* Fase 5 (12 pares = 24 cartas) */
+  .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
+
+  .memoria-card{
+    width: 90px;
+  }
+
+  .card-back{
+    border: 4px solid #880000;
+  }
 
   .card-text { 
     font-size: 0.7rem; 
     line-height: 1.1; 
   }
-  .tentativas-contador { padding: 0.3rem 1rem; }
-  .tentativas-contador p { font-size: 1.2rem; }
-  .tentativas-contador span { font-size: 1.3rem; }
+  .tentativas-contador { padding: 0.3rem 0.8rem; }
+  .tentativas-contador p { font-size: 1.1rem; width:85px;}
+  .tentativas-contador span { font-size: 1.1rem; }
 }
