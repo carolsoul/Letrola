@@ -54,6 +54,13 @@
   width: 25%;
 }
 
+.puzzle-container-bear{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 .mundo-2-puzzle-content{
   top: 40%;
 }
@@ -150,7 +157,7 @@
     top: 30% !important;
   }
   
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 40rem !important;
   }
 
@@ -176,7 +183,7 @@
     top: 15%;
   }
 
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 30rem;
   }
 
@@ -191,7 +198,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (max-width: 768px) {
   .mundo-2-puzzle-content{
     top: 30%;
   }
@@ -201,7 +208,7 @@
     top: 15%;
   }
 
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 30rem;
   }
 
@@ -226,7 +233,7 @@
 }
 
 @media (max-width: 500px) {
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 26rem;
   }
 
@@ -269,7 +276,7 @@
     top: 23%;
   }
 
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 33rem;
   }
 
@@ -309,7 +316,7 @@
     text-align: center;
   }
 
-  .puzzle-container{
+  .puzzle-container-bear{
     padding-top: 20rem;
   }
 
