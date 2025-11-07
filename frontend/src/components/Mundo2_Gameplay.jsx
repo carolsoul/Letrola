@@ -233,7 +233,7 @@ function Mundo2_Gameplay({ jogador, onFaseCompleta }) {
 
             <Modal isOpen={puzzle.isOpen} title="Qual o nome da bebida?" variant="puzzle" contentClassName="mundo-2-puzzle-content" modalBgClassName="mundo-2-puzzle-bg">
                 {puzzle.item && (
-                    <div className="puzzle-container">
+                    <div className="puzzle-container-bear">
                         <img src={puzzle.item.imgSrc} alt={puzzle.item.nome} className="puzzle-bebida-img" />
                         <PuzzleTroca palavraCorreta={puzzle.item.nome} onComplete={handleAcertoPuzzle} />
                         <div className="balao-dicas"><img src="/baloon-bear.svg" alt="balão de dica" className="baloon" /><p id="hint-text">{dicaExibida}</p></div>

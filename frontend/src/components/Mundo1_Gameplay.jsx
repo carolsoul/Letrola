@@ -203,9 +203,9 @@ function Mundo1_Gameplay({ jogador, onFaseCompleta }) {
 
   const handleConcluirFase = useCallback(() => {
     if (estadoJogo === "finalizado") return;
-    const tempoFinalMs = Date.now() - tempoInicioFase;
+    const tempoFinalMs = tempoDecorridoParaScore;
     handleFaseTermina({ tempoFinalMs });
-  }, [estadoJogo, tempoInicioFase, handleFaseTermina]);
+   }, [estadoJogo, tempoDecorridoParaScore, handleFaseTermina]);
 
   useEffect(() => {
     if (!jogador) {

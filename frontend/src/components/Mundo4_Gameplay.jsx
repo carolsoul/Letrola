@@ -6,8 +6,8 @@ import Cronometro from "./Cronometro.jsx";
 import CruzadinhaScoreDisplay from './CruzadinhaScoreDisplay.jsx';
 import '../styles/Mundo4.css';
 import { useAudio } from "../hooks/useAudio";
-import TutorialModal from "./TutorialModal.jsx"; // 1. Importar o modal de tutorial
-import { tutorials } from "../data/tutorialData.js"; // 2. Importar os dados do tutorial
+import TutorialModal from "./TutorialModal.jsx";
+import { tutorials } from "../data/tutorialData.js";
 import { buscarPalavrasDoNivel } from "../services/apiCacapalavras.js";
 
 // --- Constantes ---
