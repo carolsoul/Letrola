@@ -1,93 +1,203 @@
-/* --- Mundo 5: Jogo da Memória --- */
-.mundo5-container {
-    font-family: "Poppins", sans-serif;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #e0f7fa;
-    /* Cor de fundo suave do Mundo 5 */
-    width: 100vw;
-    height: 100vh;
-    padding-top: 100px;
-    /* Espaço para o Cronometro */
-    box-sizing: border-box;
+/* --- Estilo Base do Mundo 5 (Taiga) --- */
+.mundo5-section {
+  width: 100vw;
+  height: 100vh;
+  /* Você precisará criar e adicionar um 'level-5-background.svg' na pasta /public */
+  background-image: url('/level-5-background.svg'); 
+  background-color: #d4eaf7; /* Cor de fallback (azul gelo) */
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.jogo-memoria-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-    justify-content: center;
-    max-width: 1000px;
-    margin: 20px auto;
-    /* Espaçamento */
-    padding: 20px;
-    box-sizing: border-box;
+/* Telas de Loading e Erro */
+.loading-screen-5, .error-screen-5 {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Bangers', cursive;
+  font-size: 2.5rem;
+  color: #2c5a8c;
+  background-color: #d4eaf7;
 }
 
-.card {
-    width: 150px;
-    height: 180px;
-    perspective: 1000px;
-    cursor: pointer;
-    background-color: transparent;
+/*Contador --- */
+
+.two-columns{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.cardInner {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s;
+.tentativas-contador {
+  background: white;
+  border: 4px solid #4a90e2; 
+  border-radius: 15px;
+  padding: 0.5rem 1.5rem;
+  margin: 0.5rem 0;
+  width: fit-content;
 }
 
-.card.flipped .cardInner {
-    transform: rotateY(180deg);
+.tentativas-contador p {
+  font-family: 'Bangers', cursive;
+  font-size: 1.8rem;
+  color: #2c5a8c;
+  margin: 0;
 }
 
-.cardFront,
-.cardBack {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    transform-origin: center center;
+.tentativas-contador span {
+  color: #d9534f;
+  font-size: 2rem;
 }
 
-.cardBack {
-    transform: rotateY(0deg);
-    background-color: #ffca40;
-    backface-visibility: visible; /* Permite que a backface seja visível (vazia), fazendo o cardBack "desaparecer" quando gira */
+/* --- Área Principal do Jogo --- */
+.mundo5-main {
+  flex: 1; /* Ocupa o espaço restante */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden; 
 }
 
-.cardFront {
-    transform: rotateY(180deg);
-    background-color: #ffffff;
-    backface-visibility: hidden; /* Oculta a backface do cardFront */
+/* --- Grade do Jogo da Memória --- */
+.memoria-grid {
+  display: grid;
+  gap: 10px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 7rem;
+  padding-top: 10rem;
+  max-height: 100%; 
 }
 
-.carta-capa {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* Layouts da grade baseados na contagem de cartas */
+/* Fase 1 (4 pares = 8 cartas) */
+.grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+/* Fase 2 (6 pares = 12 cartas) */
+.grid-4x3 { grid-template-columns: repeat(4, 1fr); }
+/* Fase 3 (8 pares = 16 cartas) */
+.grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+/* Fase 4 (10 pares = 20 cartas) */
+.grid-5x4 { grid-template-columns: repeat(5, 1fr); }
+/* Fase 5 (12 pares = 24 cartas) */
+.grid-6x4 { grid-template-columns: repeat(6, 1fr); }
+
+/* --- Estilo da Carta --- */
+.memoria-card {
+  aspect-ratio: 1 / 1; /* Mantém as cartas quadradas e responsivas */
+  perspective: 1000px; /* Efeito 3D */
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  position: relative;
 }
 
-.carta-imagem {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transition: transform 0.6s ease;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
-.carta-texto {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #333;
-    padding: 10px;
-    text-align: center;
+.card-back {
+  border: 6px solid #880000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: rotateY(0deg);
+}
+
+.card-back img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Frente da carta (escondida por padrão) */
+.card-front {
+  background-color: #fff8e2; /* Fundo creme */
+  border: 4px solid #4a90e2;
+  transform: rotateY(180deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5%;
+  box-sizing: border-box;
+}
+
+/* Animação de Virar */
+.memoria-card.is-flipped .card-back {
+  transform: rotateY(-180deg);
+}
+
+.memoria-card.is-flipped .card-front {
+  transform: rotateY(0deg);
+}
+
+/* Conteúdo da Frente da Carta */
+.card-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.card-text {
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem; /* O tamanho será ajustado por media queries */
+  color: #9F5704;
+  text-align: center;
+  word-wrap: break-word;
+  word-break: break-word; /* Garante que palavras longas quebrem */
+}
+
+/* Estilo para Pares Encontrados */
+.memoria-card.is-matched {
+  opacity: 0.5;
+  cursor: default;
+  transform: scale(0.95);
+}
+
+.memoria-card.is-matched .card-front {
+  border-color: #B3CD45;
+  box-shadow: 0 0 10px #B3CD45;
+}
+
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+  .memoria-grid { gap: 5px; }
+  .grid-4x2 { grid-template-columns: repeat(4, 1fr); }
+  .grid-4x3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-5x4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card-text { font-size: 1rem; }
+  .tentativas-contador p { font-size: 1.4rem; }
+  .tentativas-contador span { font-size: 1.6rem; }
+}
+
+@media (max-width: 480px) {
+  .memoria-grid { gap: 4px; }
+  /* Ajustes para telas bem pequenas (ex: 12 pares) */
+  .grid-6x4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card-text { 
+    font-size: 0.7rem; 
+    line-height: 1.1; 
+  }
+  .tentativas-contador { padding: 0.3rem 1rem; }
+  .tentativas-contador p { font-size: 1.2rem; }
+  .tentativas-contador span { font-size: 1.3rem; }
 }
