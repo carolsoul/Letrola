@@ -4,7 +4,6 @@
   height: 100vh;
   /* Você precisará criar e adicionar um 'level-5-background.svg' na pasta /public */
   background-image: url('/level-5-background.svg'); 
-  background-color: #d4eaf7; /* Cor de fallback (azul gelo) */
   background-size: cover;
   background-position: center;
   overflow: hidden;
@@ -48,6 +47,7 @@
   font-size: 1.8rem;
   color: #2c5a8c;
   margin: 0;
+  width: 150px;
 }
 
 .tentativas-contador span {
