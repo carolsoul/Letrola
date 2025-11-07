@@ -1,0 +1,93 @@
+/* --- Mundo 5: Jogo da Memória --- */
+.mundo5-container {
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #e0f7fa;
+    /* Cor de fundo suave do Mundo 5 */
+    width: 100vw;
+    height: 100vh;
+    padding-top: 100px;
+    /* Espaço para o Cronometro */
+    box-sizing: border-box;
+}
+
+.jogo-memoria-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    max-width: 1000px;
+    margin: 20px auto;
+    /* Espaçamento */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.card {
+    width: 150px;
+    height: 180px;
+    perspective: 1000px;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+.cardInner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+}
+
+.card.flipped .cardInner {
+    transform: rotateY(180deg);
+}
+
+.cardFront,
+.cardBack {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    transform-origin: center center;
+}
+
+.cardBack {
+    transform: rotateY(0deg);
+    background-color: #ffca40;
+    backface-visibility: visible; /* Permite que a backface seja visível (vazia), fazendo o cardBack "desaparecer" quando gira */
+}
+
+.cardFront {
+    transform: rotateY(180deg);
+    background-color: #ffffff;
+    backface-visibility: hidden; /* Oculta a backface do cardFront */
+}
+
+.carta-capa {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carta-imagem {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.carta-texto {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    padding: 10px;
+    text-align: center;
+}
