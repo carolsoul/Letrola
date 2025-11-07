@@ -4,9 +4,7 @@ function criarTabelas() {
   db.serialize(() => {
     db.run("PRAGMA foreign_keys = ON");
 
-    // ▼▼▼ [INCREMENTO AQUI] Adicionamos colunas para salvar as preferências de som ▼▼▼
-    // Adicionamos 'musica_mutada' e 'sfx_mutado' com um valor padrão de 0 (false),
-    // o que significa que o som estará LIGADO por padrão para novos jogadores.
+    // Tabela de Jogadores (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS jogadores (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -16,7 +14,7 @@ function criarTabelas() {
       )
     `);
 
-    // Tabela para armazenar o progresso dos jogadores em cada fase.
+    // Tabela de Progresso (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS progresso (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -33,7 +31,7 @@ function criarTabelas() {
       )
     `);
 
-    // Tabela para os personagens do jogo (Macaco, Urso, Sapo, etc.).
+    // Tabela de Personagens (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS personagens (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +39,7 @@ function criarTabelas() {
         )
     `);
 
-    // Tabela com as informações de cada fase de cada mundo.
+    // Tabela de Fases (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS fases (
       mundo INTEGER NOT NULL,
@@ -53,7 +51,7 @@ function criarTabelas() {
       )
     `);
 
-    // Tabela para os diálogos que aparecem no início das fases.
+    // Tabela de Diálogos (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS dialogos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +68,7 @@ function criarTabelas() {
       )
     `);
 
-    // Tabela para os itens dos jogos de arrastar e montar palavras (Mundo 1 e 2).
+    // Tabela de Itens (Mundos 1 e 2) (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS itens_fase (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,7 +85,7 @@ function criarTabelas() {
       )
     `);
     
-    // Tabela para os dados do jogo de Cruzadinha (Mundo 3).
+    // Tabela de Cruzadinhas (Mundo 3) (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS cruzadinhas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,7 +100,7 @@ function criarTabelas() {
       )
     `);
     
-    // Tabela para o Caça-Palavras (Mundo 4).
+    // Tabela de Caça-Palavras (Mundo 4) (sem alteração)
     db.run(`
       CREATE TABLE IF NOT EXISTS cacapalavras_palavras (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,9 +109,34 @@ function criarTabelas() {
         palavra TEXT NOT NULL,
         UNIQUE(mundo, fase, palavra)
       )
+    `);
+    
+    // Tabela Jogo da Memória (Mundo 5) (sem alteração)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS memoria_pares (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mundo INTEGER NOT NULL,
+        fase INTEGER NOT NULL,
+        par_identificador TEXT NOT NULL,
+        imagem_url TEXT NOT NULL,
+        UNIQUE(mundo, fase, par_identificador)
+      )
+    `);
+    
+    // ▼▼▼ [NOVA TABELA] Para o Jogo de Matemática (Mundo Bônus) ▼▼▼
+    db.run(`
+      CREATE TABLE IF NOT EXISTS mundo6_desafios_matematicos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mundo INTEGER NOT NULL,
+        fase INTEGER NOT NULL,
+        pergunta TEXT NOT NULL,
+        resposta TEXT NOT NULL,
+        UNIQUE(mundo, fase, pergunta)
+      )
     `, (err) => {
+      // Este callback agora é da NOVA ÚLTIMA TABELA
       if (err) {
-        console.error("Erro ao criar tabelas:", err);
+        console.error("Erro ao criar tabela mundo6_desafios_matematicos:", err);
         return;
       }
       console.log("Tabelas criadas/verificadas com sucesso.");
@@ -136,48 +159,65 @@ function seedDatabase() {
     console.log("A inserir dados de teste...");
 
     const personagensData = [
-        { id: 1, nome: 'Macaco' }, 
+        { id: 1, nome: 'Macaco' },
         { id: 2, nome: 'Urso Polar' },
         { id: 3, nome: 'Sapo' },
-        { id: 4, nome: 'Tigre' }
+        { id: 4, nome: 'Tigrão' },
+        { id: 5, nome: 'Faísca' }, // Nome da Raposa, do seu arquivo original
+        { id: 6, nome: 'Guaxinim' } // <-- [NOVO] Personagem Bônus
     ];
 
     const fasesData = [
-        // Fases do Mundo 1
+        // Mundos 1-4 (sem alteração)
         { mundo: 1, fase: 1, nome: 'Mundo 1 - Fase 1', descricao: 'Uva, Maçã e Pera' },
         { mundo: 1, fase: 2, nome: 'Mundo 1 - Fase 2', descricao: 'Côco, Caju e Limão' },
         { mundo: 1, fase: 3, nome: 'Mundo 1 - Fase 3', descricao: 'Manga, Mamão e Banana' },
         { mundo: 1, fase: 4, nome: 'Mundo 1 - Fase 4', descricao: 'Laranja, Abacate e Morango' },
         { mundo: 1, fase: 5, nome: 'Mundo 1 - Fase 5', descricao: 'Abacaxi, Melancia e Maracujá' },
-        // Fases do Mundo 2 
         { mundo: 2, fase: 1, nome: 'Mundo 2 - Fase 1', descricao: 'Bebidas - Nível 1' },
         { mundo: 2, fase: 2, nome: 'Mundo 2 - Fase 2', descricao: 'Bebidas - Nível 2' },
         { mundo: 2, fase: 3, nome: 'Mundo 2 - Fase 3', descricao: 'Bebidas - Nível 3' },
         { mundo: 2, fase: 4, nome: 'Mundo 2 - Fase 4', descricao: 'Bebidas - Nível 4' },
         { mundo: 2, fase: 5, nome: 'Mundo 2 - Fase 5', descricao: 'Bebidas - Nível 5' },
-        // Fases do Mundo 3 
         { mundo: 3, fase: 1, nome: 'Cruzadinha - Nível 1', descricao: 'Decorações Simples' },
         { mundo: 3, fase: 2, nome: 'Cruzadinha - Nível 2', descricao: 'Mais Decorações' },
         { mundo: 3, fase: 3, nome: 'Cruzadinha - Nível 3', descricao: 'Enfeitando Tudo' },
         { mundo: 3, fase: 4, nome: 'Cruzadinha - Nível 4', descricao: 'Brilho e Cor' },
         { mundo: 3, fase: 5, nome: 'Cruzadinha - Nível 5', descricao: 'A Grande Festa' },
-        // Fases do Mundo 4 (Caça-Palavras)
         { mundo: 4, fase: 1, nome: 'Caça-Palavras - Nível 1', descricao: 'Sobremesas Fáceis' },
         { mundo: 4, fase: 2, nome: 'Caça-Palavras - Nível 2', descricao: 'Doces Gelados' },
         { mundo: 4, fase: 3, nome: 'Caça-Palavras - Nível 3', descricao: 'Clássicos da Vovó' },
         { mundo: 4, fase: 4, nome: 'Caça-Palavras - Nível 4', descricao: 'Muitas Delícias' },
         { mundo: 4, fase: 5, nome: 'Caça-Palavras - Nível 5', descricao: 'Banquete de Sobremesas' },
+        
+        // Fases do Mundo 5 (sem alteração)
+        { mundo: 5, fase: 1, nome: 'Jogo da Memória - Nível 1', descricao: '4 Pares (Frutas)' },
+        { mundo: 5, fase: 2, nome: 'Jogo da Memória - Nível 2', descricao: '6 Pares (Frutas)' },
+        { mundo: 5, fase: 3, nome: 'Jogo da Memória - Nível 3', descricao: '8 Pares (Bebidas)' },
+        { mundo: 5, fase: 4, nome: 'Jogo da Memória - Nível 4', descricao: '10 Pares (Bebidas)' },
+        { mundo: 5, fase: 5, nome: 'Jogo da Memória - Nível 5', descricao: '12 Pares (Mix)' },
+
+        // ▼▼▼ [NOVO] Fase Bônus Mundo 6 ▼▼▼
+        { mundo: 6, fase: 1, nome: 'A Perseguição Matemática', descricao: 'Pegue o Guaxinim!' },
     ];
 
     const dialogosData = [
+        // Mundos 1-4 (sem alteração)
         { mundo: 1, fase: 1, ordem: 1, personagem_id: 1, fala: 'Olá, bem-vindo ao Mundo 1!', expressao: 'feliz' },
         { mundo: 2, fase: 1, ordem: 1, personagem_id: 2, fala: 'Brrr! Bem-vindo ao meu mundo gelado!', expressao: 'feliz' },
         { mundo: 3, fase: 1, ordem: 1, personagem_id: 3, fala: 'Olá, amiguinho! Sou o Hebert, o sapo, e adoro um desafio!', expressao: 'feliz' },
-        { mundo: 4, fase: 1, ordem: 1, personagem_id: 4, fala: 'Oi, eu sou o Tigre! Me ajuda a encontrar as sobremesas escondidas?', expressao: 'feliz' },
+        { mundo: 4, fase: 1, ordem: 1, personagem_id: 4, fala: 'Oi, eu sou o Tigrão! Me ajuda a encontrar as sobremesas escondidas?', expressao: 'feliz' },
+        
+        // Diálogo do Mundo 5
+        { mundo: 5, fase: 1, ordem: 1, personagem_id: 5, fala: 'Olá! Eu sou a Faísca. Dizem que sou bem esperta... Vamos ver quem é mais rápido em achar os pares?', expressao: 'feliz' },
+        
+        // ▼▼▼ [NOVO] Diálogo Bônus Mundo 6 (Macaco explica a nova regra) ▼▼▼
+        { mundo: 6, fase: 1, ordem: 1, personagem_id: 1, fala: 'O Guaxinim roubou o bolo! Para alcançá-lo, temos que ser mais espertos que ele! Resolva estas contas o mais rápido que puder!', expressao: 'bravo' },
     ];
 
+    // Dados dos Mundos 1 e 2 (sem alteração)
+    // O Mundo 6 não usará mais esta tabela.
     const itensPorFase = [
-      // --- Itens do Mundo 1 (Frutas) ---
       { mundo: 1, fase: 1, nome: 'UVA', dica1: 'Começa com a letra U.', dica2: 'É uma palavra bem curta, com 3 letras.', imagem_url: '/uva.svg' },
       { mundo: 1, fase: 1, nome: 'MAÇÃ', dica1: 'É uma palavra com 4 letras.', dica2: 'Termina com o som de "Ã". Cuidado com o tio (~)!', imagem_url: '/maca.svg' },
       { mundo: 1, fase: 1, nome: 'PERA', dica1: 'Rima com a palavra "ERA".', dica2: 'Começa com a sílaba "PE".', imagem_url: '/pera.svg' },
@@ -193,7 +233,6 @@ function seedDatabase() {
       { mundo: 1, fase: 5, nome: 'ABACAXI', dica1: 'Começa com "A" e termina com "I".', dica2: 'Escreve-se com X e não com CH.', imagem_url: '/abacaxi.svg' },
       { mundo: 1, fase: 5, nome: 'MELANCIA', dica1: 'Começa com a sílaba "ME".', dica2: 'A sílaba do meio é "LAN".', imagem_url: '/melancia.svg' },
       { mundo: 1, fase: 5, nome: 'MARACUJÁ', dica1: 'Usa a letra Jota (J).', dica2: 'Tem um acento agudo na última letra!', imagem_url: '/maracuja.svg' },
-      // --- Itens do Mundo 2 (Bebidas) ---
       { mundo: 2, fase: 1, nome: 'SUCO', dica1: 'Começa com a letra S.', dica2: 'É uma palavra com 4 letras e 2 sílabas.', imagem_url: '/suco.svg' },
       { mundo: 2, fase: 1, nome: 'LEITE', dica1: 'Começa com a letra L.', dica2: 'Termina com a sílaba "TE".', imagem_url: '/leite.svg' },
       { mundo: 2, fase: 1, nome: 'CAFÉ', dica1: 'Tem um acento agudo no final!', dica2: 'Rima com "PÉ".', imagem_url: '/cafe.svg' },
@@ -211,24 +250,21 @@ function seedDatabase() {
       { mundo: 2, fase: 5, nome: 'ENERGÉTICO', dica1: 'É uma bebida que dá energia.', dica2: 'Termina com a sílaba "CO".', imagem_url: '/energetico.svg' },
     ];
 
+    // Dados do Mundo 3 (sem alteração)
     const cruzadinhasData = [
-        // --- Itens do Mundo 3, (Cruzadinha) ---
         { mundo: 3, fase: 1, palavra: 'FITA', dica: 'Usada para fazer laços em presentes.', x: 1, y: 0, orientacao: 'horizontal' },
         { mundo: 3, fase: 1, palavra: 'FLOR', dica: 'Colorida e perfumada, enfeita o jardim.', x: 1, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 1, palavra: 'BOLA', dica: 'Redonda e usada em muitas brincadeiras.', x: 0, y: 2, orientacao: 'horizontal' },
-        //FASE 2
         { mundo: 3, fase: 2, palavra: 'VELA', dica: 'Tem fogo e vai no bolo.', x: 1, y: 0, orientacao: 'horizontal' },
         { mundo: 3, fase: 2, palavra: 'LAÇO', dica: 'Um nó bonito de fita.', x: 3, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 2, palavra: 'TOALHA', dica: 'Cobre a mesa da festa.', x: 1, y: 1, orientacao: 'horizontal' },
         { mundo: 3, fase: 2, palavra: 'CADEIRA', dica: 'Usamos para sentar.', x: 6, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 2, palavra: 'BANDEIRA', dica: 'Enfeite de papel pendurado.', x: 0, y: 5, orientacao: 'horizontal' },
-         //FASE 3
         { mundo: 3, fase: 3, palavra: 'VASO', dica: 'Onde colocamos flores.', x: 1, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 3, palavra: 'ESTRELA', dica: 'Brilha no céu à noite.', x: 0, y: 2, orientacao: 'horizontal' },
         { mundo: 3, fase: 3, palavra: 'CESTA', dica: 'Guarda pães ou frutas.', x: 0, y: 1, orientacao: 'vertical' },
         { mundo: 3, fase: 3, palavra: 'BALÃO', dica: 'Enche de ar e voa na festa.', x: 5, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 3, palavra: 'FAIXA', dica: 'Escreve "Parabéns" na parede.', x: 6, y: 1, orientacao: 'vertical' },
-        //FASE 4
         { mundo: 3, fase: 4, palavra: 'ALMOFADA', dica: 'Travesseiro fofo do sofá.', x: 2, y: 1, orientacao: 'horizontal' },
         { mundo: 3, fase: 4, palavra: 'CATAVENTO', dica: 'Gira quando o vento bate.', x: 2, y: 0, orientacao: 'vertical' },
         { mundo: 3, fase: 4, palavra: 'QUADROS', dica: 'Fotos ou desenhos na parede.', x: 0, y: 3, orientacao: 'horizontal' },
@@ -236,7 +272,6 @@ function seedDatabase() {
         { mundo: 3, fase: 4, palavra: 'LANTEJOULA', dica: 'Bolinha brilhante para roupa.', x: 0, y: 6, orientacao: 'horizontal' },
         { mundo: 3, fase: 4, palavra: 'COPO', dica: 'Usamos para beber suco.', x: 6, y: 5, orientacao: 'vertical' },
         { mundo: 3, fase: 4, palavra: 'MESA', dica: 'Onde apoiamos o prato.', x: 4, y: 5, orientacao: 'vertical' },
-        //FASE 5
         { mundo: 3, fase: 5, palavra: 'DECORAÇÃO', dica: 'O ato de enfeitar um ambiente.', x: 3, y: 1, orientacao: 'horizontal' },
         { mundo: 3, fase: 5, palavra: 'BANDEIRINHAS', dica: 'Pequenas bandeiras de papel unidas por um cordão.', x: 0, y: 4, orientacao: 'horizontal' },
         { mundo: 3, fase: 5, palavra: 'ENFEITE', dica: 'Qualquer objeto usado para embelezar.', x: 4, y: 1, orientacao: 'vertical' },
@@ -246,32 +281,96 @@ function seedDatabase() {
         { mundo: 3, fase: 5, palavra: 'ARCO', dica: 'Estrutura curvada, muitas vezes com balões.', x: 1, y: 4, orientacao: 'vertical' }
     ];
 
+    // Dados do Mundo 4 (sem alteração)
     const cacapalavrasData = [
-        // Mundo 4 - Fase 1
         { mundo: 4, fase: 1, palavra: 'BOLO' }, { mundo: 4, fase: 1, palavra: 'PUDIM' }, { mundo: 4, fase: 1, palavra: 'TORTA' },
-        // Mundo 4 - Fase 2
         { mundo: 4, fase: 2, palavra: 'COCADA' }, { mundo: 4, fase: 2, palavra: 'AÇAÍ' }, { mundo: 4, fase: 2, palavra: 'PICOLÉ' }, { mundo: 4, fase: 2, palavra: 'MANJAR' }, { mundo: 4, fase: 2, palavra: 'SORVETE' },
-        // Mundo 4 - Fase 3
         { mundo: 4, fase: 3, palavra: 'CHOCOLATE' }, { mundo: 4, fase: 3, palavra: 'BOLINHO' }, { mundo: 4, fase: 3, palavra: 'BISCOITO' }, { mundo: 4, fase: 3, palavra: 'PAVÊ' }, { mundo: 4, fase: 3, palavra: 'PAÇOCA' },
-        // Mundo 4 - Fase 4
         { mundo: 4, fase: 4, palavra: 'MOUSSE' }, { mundo: 4, fase: 4, palavra: 'BOMBOM' }, { mundo: 4, fase: 4, palavra: 'TAPIOCA' }, { mundo: 4, fase: 4, palavra: 'CHURROS' }, { mundo: 4, fase: 4, palavra: 'GELATINA' }, { mundo: 4, fase: 4, palavra: 'PANQUECA' }, { mundo: 4, fase: 4, palavra: 'ROCAMBOLE' },
-        // Mundo 4 - Fase 5
         { mundo: 4, fase: 5, palavra: 'BANOFFE' }, { mundo: 4, fase: 5, palavra: 'CARAMELO' }, { mundo: 4, fase: 5, palavra: 'SUSPIRO' }, { mundo: 4, fase: 5, palavra: 'PANETONE' }, { mundo: 4, fase: 5, palavra: 'COOKIES' }, { mundo: 4, fase: 5, palavra: 'QUINDIM' }, { mundo: 4, fase: 5, palavra: 'PAMONHA' },
     ];
+    
+    // Dados do Mundo 5 (sem alteração)
+    const memoriaData = [
+        // Fase 1: 4 Pares (Frutas Mundo 1)
+        { mundo: 5, fase: 1, id: 'UVA', img: '/uva.svg' },
+        { mundo: 5, fase: 1, id: 'MAÇÃ', img: '/maca.svg' },
+        { mundo: 5, fase: 1, id: 'PERA', img: '/pera.svg' },
+        { mundo: 5, fase: 1, id: 'COCO', img: '/coco.svg' },
+        // Fase 2: 6 Pares (Frutas Mundo 1)
+        { mundo: 5, fase: 2, id: 'CAJU', img: '/caju.svg' },
+        { mundo: 5, fase: 2, id: 'LIMÃO', img: '/limao.svg' },
+        { mundo: 5, fase: 2, id: 'MANGA', img: '/manga.svg' },
+        { mundo: 5, fase: 2, id: 'BANANA', img: '/banana.svg' },
+        { mundo: 5, fase: 2, id: 'MORANGO', img: '/morango.svg' },
+        { mundo: 5, fase: 2, id: 'LARANJA', img: '/laranja.svg' },
+        // Fase 3: 8 Pares (Bebidas Mundo 2)
+        { mundo: 5, fase: 3, id: 'SUCO', img: '/suco.svg' },
+        { mundo: 5, fase: 3, id: 'LEITE', img: '/leite.svg' },
+        { mundo: 5, fase: 3, id: 'CAFÉ', img: '/cafe.svg' },
+        { mundo: 5, fase: 3, id: 'ÁGUA', img: '/agua.svg' },
+        { mundo: 5, fase: 3, id: 'VITAMINA', img: '/vitamina.svg' },
+        { mundo: 5, fase: 3, id: 'LIMONADA', img: '/limonada.svg' },
+        { mundo: 5, fase: 3, id: 'IOGURTE', img: '/iogurte.svg' },
+        { mundo: 5, fase: 3, id: 'REFRIGERANTE', img: '/refrigerante.svg' },
+        // Fase 4: 10 Pares (Bebidas Mundo 2)
+        { mundo: 5, fase: 4, id: 'SUCO DE MORANGO', img: '/suco_morango.svg' },
+        { mundo: 5, fase: 4, id: 'CALDO DE CANA', img: '/caldo_de_cana.svg' },
+        { mundo: 5, fase: 4, id: 'RASPADINHA', img: '/raspadinha.svg' },
+        { mundo: 5, fase: 4, id: 'ÁGUA DE COCO', img: '/agua_de_coco.svg' },
+        { mundo: 5, fase: 4, id: 'ACHOCOLATADO', img: '/achocolatado.svg' },
+        { mundo: 5, fase: 4, id: 'CAPUCCINO', img: '/capuccino.svg' },
+        { mundo: 5, fase: 4, id: 'ENERGÉTICO', img: '/energetico.svg' },
+        { mundo: 5, fase: 4, id: 'CAFÉ', img: '/cafe.svg' },
+        { mundo: 5, fase: 4, id: 'SUCO', img: '/suco.svg' },
+        { mundo: 5, fase: 4, id: 'LEITE', img: '/leite.svg' },
+        // Fase 5: 12 Pares (Mix Mundo 1 e 2)
+        { mundo: 5, fase: 5, id: 'ABACAXI', img: '/abacaxi.svg' },
+        { mundo: 5, fase: 5, id: 'MELANCIA', img: '/melancia.svg' },
+        { mundo: 5, fase: 5, id: 'MARACUJÁ', img: '/maracuja.svg' },
+        { mundo: 5, fase: 5, id: 'UVA', img: '/uva.svg' },
+        { mundo: 5, fase: 5, id: 'BANANA', img: '/banana.svg' },
+        { mundo: 5, fase: 5, id: 'MORANGO', img: '/morango.svg' },
+        { mundo: 5, fase: 5, id: 'VITAMINA', img: '/vitamina.svg' },
+        { mundo: 5, fase: 5, id: 'ÁGUA DE COCO', img: '/agua_de_coco.svg' },
+        { mundo: 5, fase: 5, id: 'REFRIGERANTE', img: '/refrigerante.svg' },
+        { mundo: 5, fase: 5, id: 'ENERGÉTICO', img: '/energetico.svg' },
+        { mundo: 5, fase: 5, id: 'IOGURTE', img: '/iogurte.svg' },
+        { mundo: 5, fase: 5, id: 'SUCO', img: '/suco.svg' },
+    ];
+
+    // ▼▼▼ [NOVOS DADOS] Para o Jogo de Matemática (Mundo 6) ▼▼▼
+    const desafiosMatematicosData = [
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 2 + 2 ?', resposta: '4' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 5 + 3 ?', resposta: '8' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 4 - 1 ?', resposta: '3' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 10 - 5 ?', resposta: '5' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 3 x 2 ?', resposta: '6' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 5 x 2 ?', resposta: '10' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 2 + 8 ?', resposta: '10' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 9 - 2 ?', resposta: '7' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 4 + 4 ?', resposta: '8' },
+        { mundo: 6, fase: 1, pergunta: 'Quanto é 3 x 3 ?', resposta: '9' },
+    ];
+
 
     db.serialize(() => {
+      // Inserir Personagens
       const stmtPersonagens = db.prepare("INSERT INTO personagens (id, nome) VALUES (?, ?)");
       personagensData.forEach(p => stmtPersonagens.run(p.id, p.nome));
       stmtPersonagens.finalize();
 
+      // Inserir Fases
       const stmtFases = db.prepare("INSERT INTO fases (mundo, fase, nome, descricao) VALUES (?, ?, ?, ?)");
       fasesData.forEach(f => stmtFases.run(f.mundo, f.fase, f.nome, f.descricao));
       stmtFases.finalize();
 
+      // Inserir Diálogos
       const stmtDialogos = db.prepare("INSERT INTO dialogos (mundo, fase, ordem, personagem_id, fala, expressao) VALUES (?, ?, ?, ?, ?, ?)");
       dialogosData.forEach(d => stmtDialogos.run(d.mundo, d.fase, d.ordem, d.personagem_id, d.fala, d.expressao));
       stmtDialogos.finalize();
 
+      // Inserir Itens (Mundos 1 e 2)
       const stmtItens = db.prepare("INSERT INTO itens_fase (mundo, fase, ordem, resposta, letras, dica1, dica2, imagem_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
       let ordemContador = {};
       itensPorFase.forEach((item) => {
@@ -282,23 +381,35 @@ function seedDatabase() {
         do {
             pecasEmbaralhadas = [...pecasDoPuzzle].sort(() => 0.5 - Math.random());
         } while (pecasEmbaralhadas.join('') === item.nome && pecasDoPuzzle.length > 1);
-        const jsonPecas = JSON.stringify(pecasEmbaralhadas);
+        const jsonPecas = JSON.stringify(pecasEmbaralhadas.map(l => l.toUpperCase())); // Assegura que as letras embaralhadas estão em maiúsculas
         const ordem = ordemContador[chaveFase];
-        stmtItens.run(item.mundo, item.fase, ordem, item.nome, jsonPecas, item.dica1, item.dica2, item.imagem_url);
+        stmtItens.run(item.mundo, item.fase, ordem, item.nome.toUpperCase(), jsonPecas, item.dica1, item.dica2, item.imagem_url);
         ordemContador[chaveFase]++;
       });
       stmtItens.finalize();
 
+      // Inserir Cruzadinhas (Mundo 3)
       const stmtCruzadinhas = db.prepare("INSERT INTO cruzadinhas (mundo, fase, palavra, dica, posicao_x, posicao_y, orientacao) VALUES (?, ?, ?, ?, ?, ?, ?)");
       cruzadinhasData.forEach(item => {
-        stmtCruzadinhas.run(item.mundo, item.fase, item.palavra, item.dica, item.x, item.y, item.orientacao);
+        stmtCruzadinhas.run(item.mundo, item.fase, item.palavra.toUpperCase(), item.dica, item.x, item.y, item.orientacao); // Assegura que a palavra está em maiúsculas
       });
       stmtCruzadinhas.finalize();
 
+      // Inserir Caça-Palavras (Mundo 4)
       const stmtCacapalavras = db.prepare("INSERT INTO cacapalavras_palavras (mundo, fase, palavra) VALUES (?, ?, ?)");
-      cacapalavrasData.forEach(c => stmtCacapalavras.run(c.mundo, c.fase, c.palavra));
-      stmtCacapalavras.finalize((err) => {
-          if(!err) console.log("Dados de teste inseridos com sucesso.");
+      cacapalavrasData.forEach(c => stmtCacapalavras.run(c.mundo, c.fase, c.palavra.toUpperCase())); // Assegura que a palavra está em maiúsculas
+      stmtCacapalavras.finalize();
+      
+      // Inserir Pares do Jogo da Memória (Mundo 5)
+      const stmtMemoria = db.prepare("INSERT INTO memoria_pares (mundo, fase, par_identificador, imagem_url) VALUES (?, ?, ?, ?)");
+      memoriaData.forEach(m => stmtMemoria.run(m.mundo, m.fase, m.id.toUpperCase(), m.img)); // Assegura que o ID está em maiúsculas
+      stmtMemoria.finalize();
+      
+      // ▼▼▼ [NOVA INSERÇÃO] Inserir Desafios de Matemática (Mundo 6) ▼▼▼
+      const stmtDesafios = db.prepare("INSERT INTO mundo6_desafios_matematicos (mundo, fase, pergunta, resposta) VALUES (?, ?, ?, ?)");
+      desafiosMatematicosData.forEach(d => stmtDesafios.run(d.mundo, d.fase, d.pergunta, d.resposta));
+      stmtDesafios.finalize((err) => {
+          if(!err) console.log("Dados de teste (incluindo Fase Bônus de Matemática) inseridos com sucesso.");
       });
     });
   });
