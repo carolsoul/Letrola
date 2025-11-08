@@ -131,3 +131,14 @@
     }
 }
 
+@media (max-width: 430px){
+    .modal-bg{
+        height: 36rem !important;
+    }
+}
+
+@media (max-width: 412px){
+    .modal-bg{
+        height: 25rem !important;
+    }
+}

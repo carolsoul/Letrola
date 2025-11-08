@@ -61,3 +61,15 @@
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
+@media (max-width: 412px){
+  .area-slots{
+    width: 412px;
+  }
+
+  .letra-tile{
+    width: 28px;
+    height: 40px;
+  }
+
+}

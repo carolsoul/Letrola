@@ -402,3 +402,9 @@
     top: 52%;
   }
 }
+
+@media (max-width: 412px){
+  .balao-dicas{
+    transform: translateY(-10px);
+  }
+}

@@ -466,6 +466,7 @@ button:hover{
         overflow: hidden;
         position: absolute;
     }
+
     .home-bg {
         width: 100vw;
         height: 100vh;
@@ -581,4 +582,8 @@ button:hover{
     }
 }
 
-
+@media (width: 375px){
+    .input-name{
+        width: 100% !important;
+    }
+}

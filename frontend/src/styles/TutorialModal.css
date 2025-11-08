@@ -193,6 +193,7 @@
   }
 }
 
+
 /* Media Queries para celulares */
 @media (width: 430px) {
   .tutorial-image {
@@ -270,6 +271,24 @@
   }
 }
 
+@media (width: 375px) {
+  .tutorial-image{
+    width: 22rem;
+    top: 10%;
+  }
+
+  .tutorial-text{
+      font-size: 1.1rem;
+      width: 13rem;
+  }
+
+  .tutorial-btn{
+    padding: 6px 20px;
+    font-size: 1.2rem;
+    bottom: 40%;
+  }
+}
+
 @media (width: 360px) {
   .tutorial-image {
     width: 22rem;
@@ -286,5 +305,23 @@
     font-size: 1.2rem;
     padding: 6px 20px;
     bottom: 31.5%;
+  }
+}
+
+@media (width: 344px) {
+  .tutorial-image{
+    width: 22rem;
+    top: 15%;
+  }
+
+  .tutorial-text{
+      font-size: 1.1rem;
+      width: 13rem;
+  }
+
+  .tutorial-btn{
+    padding: 6px 20px;
+    font-size: 1.2rem;
+    bottom: 47%;
   }
 }

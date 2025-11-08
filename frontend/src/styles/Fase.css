@@ -297,3 +297,25 @@ header{
     right: 14%;
   }
 }
+
+@media (max-width: 412px){
+    .time-status, .feedback-stats p, .feedback-info p{
+      font-size: 0.9rem ;
+    }
+
+    .feedback-actions{
+      width: 255px;
+    }
+
+    .feedback-content{
+      margin-bottom: 2rem;
+    }
+
+    .btn.next-level-btn{
+      width: 7rem;
+      top: 14%;
+      left: 20%;
+      padding: 0.3rem 1.5rem;
+    }
+
+}

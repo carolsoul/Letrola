@@ -617,3 +617,17 @@
         width: 80%;
     }
 }
+
+@media (max-width: 375px) {
+        .historia-imagem{
+            left: -80%;
+        } 
+        .historia-dialogo{
+            top: 70%;
+            font-size: 0.9rem;
+        }
+        .historia-btn{
+            left: 55% !important;
+        }
+}
+
