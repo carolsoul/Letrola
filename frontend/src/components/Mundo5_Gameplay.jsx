@@ -14,6 +14,7 @@ const MUNDO_ID = 5;
 const TEMPO_3_ESTRELAS = 60;  // 1 minuto
 const TEMPO_2_ESTRELAS = 120; // 2 minutos
 const TEMPO_1_ESTRELA = 180; // 3 minutos
+const PREVIEW_DURATION = 2000; // 2 segundos
 
 // --- Função Utilitária ---
 const formatTime = (timeInMs) => {
@@ -69,6 +70,8 @@ function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
     const [tentativas, setTentativas] = useState(0);
     const [isChecking, setIsChecking] = useState(false);
     const timerRef = useRef(null); 
+    const tempoDecorridoRef = useRef(0);
+    const estadoJogoRef = useRef(estadoJogo);
 
     // Efeito para música e tutorial
     useEffect(() => {
@@ -105,8 +108,8 @@ function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
 
         const deckDaApi = await buscarDeckDaFase(mundo_id, fase_id);
         if (deckDaApi) {
-            setCards(deckDaApi);
-            setEstadoJogo("jogando");
+            setCards(deckDaApi);setFlippedCards(deckDaApi); 
+            setEstadoJogo("preview");
         } else {
             console.error("Não foi possível carregar o deck da fase.");
             setEstadoJogo("erro");
@@ -117,6 +120,23 @@ function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
         if (!jogador) navigate("/");
         else inicializarFase();
     }, [jogador, navigate, inicializarFase]);
+
+    // garante o valor dos refs sejam os mais recentes
+    useEffect(() => {
+        estadoJogoRef.current = estadoJogo;
+    }, [estadoJogo]);
+
+    useEffect(() => {
+        if (estadoJogo === "preview") {
+            const previewTimer = setTimeout(() => {
+                setFlippedCards([]);
+                setEstadoJogo("jogando");
+                setTempoInicioFase(Date.now());
+            }, PREVIEW_DURATION);
+
+            return () => clearTimeout(previewTimer);
+        }
+    }, [estadoJogo]);
 
     // Lógica de verificação de pares
     useEffect(() => {
@@ -142,26 +162,32 @@ function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
     }, [flippedCards, playSound]);
 
     // Lógica de finalização
+    
     const finalizarFase = useCallback((motivo = 'concluido') => {
-        if (estadoJogo === "finalizado") return;
-        setEstadoJogo("finalizado");
-        
-        const tempoFinalSegundos = Math.floor(tempoDecorridoParaScore / 1000);
+        // Agora lê o valor do ref, que está sempre atualizado
+        if (estadoJogoRef.current === "finalizado") return; 
+
+        setEstadoJogo("finalizado"); // Isso irá atualizar o ref na próxima renderização
+
+        // Lê o tempo final do ref
+        const tempoFinalSegundos = Math.floor(tempoDecorridoRef.current / 1000); 
         let estrelas = 0;
-        
+
         if (motivo !== 'tempo_esgotado') {
-            if (tempoFinalSegundos <= TEMPO_3_ESTRELAS) estrelas = 3;
-            else if (tempoFinalSegundos <= TEMPO_2_ESTRELAS) estrelas = 2;
+        if (tempoFinalSegundos <= TEMPO_3_ESTRELAS) estrelas = 3;
+        else if (tempoFinalSegundos <= TEMPO_2_ESTRELAS) estrelas = 2;
             else if (tempoFinalSegundos <= TEMPO_1_ESTRELA) estrelas = 1;
         }
         onFaseCompleta({ estrelas, tempoConclusao: tempoFinalSegundos });
-    }, [estadoJogo, onFaseCompleta, tempoDecorridoParaScore]); // ✅ Dependência atualizada
+
+    // Agora a função é estável e só depende da prop onFaseCompleta
+    }, [onFaseCompleta]);
 
     useEffect(() => {
-        if (cards.length > 0 && matchedCards.length === cards.length) {
+        if (estadoJogo === 'jogando' && cards.length > 0 && matchedCards.length === cards.length) {
             setTimeout(() => finalizarFase('concluido'), 500);
         }
-    }, [matchedCards, cards, finalizarFase]);
+    }, [matchedCards.length, cards.length, finalizarFase, estadoJogo]);
 
     const handleCardClick = (card) => {
         if (isChecking || flippedCards.length >= 2 || flippedCards.some(c => c.id === card.id) || estadoJogo !== 'jogando') return;
@@ -180,6 +206,7 @@ function Mundo5_Gameplay({ jogador, onFaseCompleta }) {
     const onTempoTick = (tempoMs) => {
         setTempoExibido(formatTime(tempoMs, "ms"));
         setTempoDecorridoParaScore(tempoMs);
+        tempoDecorridoRef.current = tempoMs;
     };
 
     // Handlers do Modal de Configuração
