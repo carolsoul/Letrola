@@ -84,7 +84,7 @@ export const mundos = {
     historia: [
       {
         imagem: "/tiger-story-1.svg",
-        dialogo: "Oi, eu sou o Tigre! O guardião mais corajoso e imponente da savana!",
+        dialogo: "Oi, eu sou o Tao! O tigre mais corajoso e imponente da savana!",
       },
       {
         imagem: "/tiger-story-2.svg",
