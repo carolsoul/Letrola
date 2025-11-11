@@ -5,154 +5,192 @@ import Mundo2_Gameplay from '../components/Mundo2_Gameplay';
 import Mundo3_Gameplay from '../components/Mundo3_Gameplay';
 import Mundo4_Gameplay from '../components/Mundo4_Gameplay';
 import Mundo5_Gameplay from '../components/Mundo5_Gameplay';
+import Mundo6_Gameplay from '../components/Mundo6_Gameplay.jsx';
 import Modal from "../components/Modal.jsx";
-import { salvarProgresso, buscarTotalEstrelas } from "../services/apiProgresso.js";
+import { salvarProgresso, buscarTotalEstrelas} from "../services/apiProgresso.js";
 import { mundos } from "../data/mundoData.js";
 import { useAudio } from "../hooks/useAudio";
 
 // Função para formatar o tempo
 const formatTime = (time, unit = 'ms') => {
    const totalSeconds = unit === 'ms' ? Math.floor(time / 1000) : time;
-  const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-  const sec = String(totalSeconds % 60).padStart(2, "0");
-  return `${min}:${sec}`;
+   const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+   const sec = String(totalSeconds % 60).padStart(2, "0");
+   return `${min}:${sec}`;
 };
 
 // Constantes da fase
 const TEMPO_3_ESTRELAS = 60; // em segundos
-const MINIMO_ESTRELAS_AVANCAR = 11; // Mínimo de estrelas para desbloquear o próximo mundo
+const MINIMO_ESTRELAS_AVANCAR = 11;
+const TOTAL_ESTRELAS_JOGO = 75; // 15 estrelas * 5 mundos
 
 function Fase() {
   const { mundoId, faseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-   const { jogador } = location.state || {};
+  const { jogador } = location.state || {};
   const { playSound } = useAudio();
 
   const mundo_id = parseInt(mundoId);
-   const fase_id = parseInt(faseId);
-
-  // States dos modais e do jogo
+  const fase_id = parseInt(faseId);
+  
+  // States dos modais
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-   const [resultadoFinal, setResultadoFinal] = useState({ title: "", estrelas: 0, tempoConclusao: 0, proximaMeta: "" });
+  const [resultadoFinal, setResultadoFinal] = useState({ title: "", estrelas: 0, tempoConclusao: 0, proximaMeta: "" });
   const [isFimDoMundoOpen, setIsFimDoMundoOpen] = useState(false);
-   const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, desbloqueado: false, mensagem: "" });
+  // Adicionado 'isBonus' para controlar o modal de fim de jogo
+  const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, desbloqueado: false, mensagem: "", isBonus: false });
+  // REMOVIDO: const [gameKey, setGameKey] = useState(Date.now());
 
-   // Lida com a conclusão de uma fase, agora com som
-   const handleFaseCompleta = useCallback(async (resultado) => {
-    // Toca o som de vitória/derrota primeiro
+  // Lida com a conclusão de uma fase
+  const handleFaseCompleta = useCallback(async (resultado) => {
+    // Toca o som de vitória/derrota
     if (resultado.estrelas > 0) {
       playSound('vitoria');
     } else {
-      // Se perdeu na última fase, ainda mostra o feedback normal
-      // (Não vai para os créditos se perder)
-      if (mundo_id === 4 && fase_id === 5) {
-          playSound('derrota');
-            setResultadoFinal({
-            title: "Tempo Esgotado!",
-            estrelas: 0,
-            tempoConclusao: resultado.tempoConclusao,
-          proximaMeta: `Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.` 
-        });
-        setIsFeedbackOpen(true);
-        return; // Sai da função
-      }
-      playSound('derrota'); // Som de derrota para outras fases
+      playSound('derrota');
     }
 
-     try {
-       await salvarProgresso(jogador.id, mundo_id, fase_id, resultado.estrelas, resultado.tempoConclusao);
+    // Salva o progresso
+    try {
+        await salvarProgresso(jogador.id, mundo_id, fase_id, resultado.estrelas, resultado.tempoConclusao);
     } catch (error) {
         console.error("Falha ao salvar o progresso:", error);
     }
 
-    if (mundo_id === 5 && fase_id === 5 && resultado.estrelas > 0) {
+    // --- LÓGICA DE FIM DE FASE ATUALIZADA ---
+
+    // CASO 1: É A ÚLTIMA FASE DO MUNDO BÔNUS (Mundo 6)
+    if (mundo_id === 6 && fase_id === 1 && resultado.estrelas > 0) {
+        // Leva direto para os créditos
         navigate('/creditos');
         return;
     }
 
-    if (fase_id === 5) {
+    // CASO 2: É A ÚLTIMA FASE DO MUNDO 5 (Fim do jogo principal)
+    if (mundo_id === 5 && fase_id === 5 && resultado.estrelas > 0) {
+        // Verifica o total de estrelas de TODOS os mundos (1-5)
+        const totalEstrelasJogador = await buscarTotalEstrelas(jogador.id);
+        const bonusDesbloqueado = totalEstrelasJogador >= TOTAL_ESTRELAS_JOGO;
+
+        if (bonusDesbloqueado) {
+            // Mostrar o modal de bônus
+            setResultadoMundo({
+                totalEstrelas: totalEstrelasJogador,
+                desbloqueado: true,
+                isBonus: true, // Flag para o modal
+                mensagem: `UAU! Você coletou todas as ${TOTAL_ESTRELAS_JOGO} estrelas! Uma fase bônus secreta foi desbloqueada!`
+            });
+            setIsFimDoMundoOpen(true);
+        } else {
+            // Não tem estrelas o suficiente, vai para os créditos
+            navigate('/creditos');
+        }
+        return; // Importante: Sai da função
+    }
+
+    // CASO 3: É A ÚLTIMA FASE DOS MUNDOS 1-4
+    if (fase_id === 5 && mundo_id < 5 && resultado.estrelas > 0) {
         const totalEstrelasMundo = await buscarTotalEstrelas(jogador.id, mundo_id);
         const desbloqueado = totalEstrelasMundo >= MINIMO_ESTRELAS_AVANCAR;
-
-       setResultadoMundo({
+        
+        setResultadoMundo({
             totalEstrelas: totalEstrelasMundo,
             desbloqueado: desbloqueado,
+            isBonus: false,
             mensagem: desbloqueado
-            ? `Você coletou ${totalEstrelasMundo} estrelas e desbloqueou o próximo mundo!`
-            : `Você precisa de pelo menos ${MINIMO_ESTRELAS_AVANCAR} estrelas para avançar. Você conseguiu ${totalEstrelasMundo}. Jogue novamente para conseguir mais estrelas!`
+                ? `Você coletou ${totalEstrelasMundo} estrelas e desbloqueou o próximo mundo!`
+                : `Você precisa de pelo menos ${MINIMO_ESTRELAS_AVANCAR} estrelas para avançar. Você conseguiu ${totalEstrelasMundo}. Jogue novamente!`
         });
         setIsFimDoMundoOpen(true);
-    } else {
+        return;
+    }
 
-      let metaTexto = "";
-      let titulo = "";
+    // CASO 4: FASE NORMAL (ou derrota em qualquer fase)
+    let metaTexto = "";
+    let titulo = "";
 
-      if (resultado.estrelas === 0) {
-          titulo = "";
-          metaTexto = `Tente novamente! Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
-      } else if (resultado.estrelas < 3) {
-          titulo = "";
-          metaTexto = `Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
-      } else { // resultado.estrelas === 3
-          titulo = "";
-          metaTexto = "Parabéns! Você foi muito rápido!";
-      }
+    if (resultado.estrelas === 0) {
+         metaTexto = `Tente novamente! Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
+    } else if (resultado.estrelas < 3) {
+         metaTexto = `Tente novamente! Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
+    } else { // resultado.estrelas === 3
+         metaTexto = "Parabéns! Você foi muito rápido!";
+    }
+    
+    // Corrige o bug do título vazio
+    setResultadoFinal({
+        title: titulo, 
+        estrelas: resultado.estrelas,
+        tempoConclusao: resultado.tempoConclusao,
+        proximaMeta: metaTexto 
+    });
+    setIsFeedbackOpen(true);
 
-       	setResultadoFinal({
-          	title: titulo, 
-           	estrelas: resultado.estrelas,
-          	tempoConclusao: resultado.tempoConclusao,
-          	proximaMeta: metaTexto 
-      	});
-       	setIsFeedbackOpen(true);
-     }
-  }, [jogador, mundo_id, fase_id, playSound, navigate]); // Adicionei 'navigate' que estava faltando nas dependências
+  }, [jogador, mundo_id, fase_id, playSound, navigate]);
 
   const handleVoltarAoMapa = () => {
     playSound('click');
     const navState = { jogador, mundo_id };
     if (fase_id === 5) {
-         navState.checkWorldCompletion = true;
+        navState.checkWorldCompletion = true;
+        // Se for o fim do mundo 5, marca para o mapa re-verificar o bônus
+        if (mundo_id === 5) {
+            navState.checkBonus = true; 
+        }
     }
     setIsFeedbackOpen(false);
+    setIsFimDoMundoOpen(false);
     navigate("/mapa-do-jogo", { state: navState });
   };
 
   const handleAvancar = () => {
-  playSound('click');
-      const proxima_fase_id = fase_id + 1;
-      setIsFeedbackOpen(false);
-      navigate(`/mundo/${mundo_id}/fase/${proxima_fase_id}`, { state: { jogador } });
-};
+    playSound('click');
+    const proxima_fase_id = fase_id + 1;
+    setIsFeedbackOpen(false);
+    navigate(`/mundo/${mundo_id}/fase/${proxima_fase_id}`, { state: { jogador } });
+    // REMOVIDO: setGameKey(Date.now());
+  };
 
   const handleRetry = () => {
     playSound('click');
     setIsFeedbackOpen(false);
+    // Navega para a mesma URL para forçar re-render dos filhos
     navigate(`/mundo/${mundo_id}/fase/${fase_id}`, { state: { jogador }, replace: true });
+    // REMOVIDO: setGameKey(Date.now());
    };
 
   const handleProximoMundo = () => {
     playSound('click');
     setIsFimDoMundoOpen(false);
-     const proximo_mundo_id = mundo_id + 1;
+    const proximo_mundo_id = mundo_id + 1;
     navigate("/mapa-do-jogo", {
-    state: { jogador, mundo_id: proximo_mundo_id }, replace: true
+      state: { jogador, mundo_id: proximo_mundo_id }, replace: true
     });
+  };
+
+  // Nova função para ir ao Bônus
+  const handleIrParaBonus = () => {
+    playSound('click');
+    setIsFimDoMundoOpen(false);
+    navigate(`/mundo/6/fase/1`, { state: { jogador } });
   };
 
    const renderGameplay = () => {
     switch (mundo_id) {
+      // REMOVIDO: key={gameKey} de todas as chamadas
       case 1:
         return <Mundo1_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
       case 2:
         return <Mundo2_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
       case 3:
         return <Mundo3_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
-       case 4:
+      case 4:
         return <Mundo4_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
-       case 5:
+      case 5:
         return <Mundo5_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
+      case 6: // Adicionado case 6
+        return <Mundo6_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta}/>
       default:
          return <div>Mundo não encontrado!</div>;
      }
@@ -161,59 +199,78 @@ function Fase() {
    useEffect(() => {
      if (!jogador) {
        navigate('/');
-    }
+     }
    }, [jogador, navigate]);
 
    return (
      <div>
-      {renderGameplay()}
+       {renderGameplay()}
 
-      {/* Modal de Feedback de Fase */}
-      <Modal isOpen={isFeedbackOpen} onClose={handleVoltarAoMapa} title={resultadoFinal.title} variant="feedback">
-        <div className="feedback-content">
-          <div className="feedback-stats">
-            <p className="time-status">Seu tempo:
-              <span>{formatTime(resultadoFinal.tempoConclusao, 's')}</span>
-            </p>
-            <p>{resultadoFinal.proximaMeta}</p>
-          </div>
-          <div className="feedback-info">
-            <p>{mundos[mundo_id]?.mensagemFeedback || "Parabéns, você completou o desafio!"}</p>
+       {/* Modal de Feedback de Fase */}
+       <Modal isOpen={isFeedbackOpen} onClose={handleVoltarAoMapa} title={resultadoFinal.title} variant="feedback">
+         <div className="feedback-content">
+           <div className="feedback-stats">
+             <p className="time-status">Seu tempo:
+               <span>{formatTime(resultadoFinal.tempoConclusao, 's')}</span>
+             </p>
+             <p>{resultadoFinal.proximaMeta}</p>
            </div>
-          <div className="feedback-actions">
-
+           <div className="feedback-info">
+             <p>{mundos[mundo_id]?.mensagemFeedback || "Parabéns, você completou o desafio!"}</p>
+            </div>
+           <div className="feedback-actions">
              <button className="btn map-btn" onClick={handleVoltarAoMapa}>
-              <div></div>
-              🏠
-            </button>
+               <div></div>
+               🏠
+             </button>
+             <button className="btn retry-btn" onClick={handleRetry}>
+               <div></div>
+               ↩
+             </button>
+             {resultadoFinal.estrelas > 0 && fase_id < 5 && (
+             <button className="btn next-level-btn" onClick={handleAvancar}>
+               <div></div> avançar
+              </button>)}
+            </div>
+          </div>
+       </Modal>
 
-            <button className="btn retry-btn" onClick={handleRetry}>
-              <div></div>
-            ↩
-            </button>
-            {resultadoFinal.estrelas > 0 && fase_id < 5 && (
-            <button className="btn next-level-btn" onClick={handleAvancar}>
-              <div></div> avançar
-             </button>)}
+     {/* Modal de Fim de Mundo (Atualizado com lógica bônus) */}
+     <Modal isOpen={isFimDoMundoOpen}
+       onClose={handleVoltarAoMapa}
+       variant="feedback">
+         <div className="feedback-content">
+           <div className="feedback-stats">
+               <p>{resultadoMundo.mensagem}</p>
+               
+               {/* CASO 1: É o modal bônus E desbloqueou */}
+               {resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
+                 <button className='btn next-level-btn' onClick={handleIrParaBonus}>
+                   Jogar Fase Bônus!
+                 </button>
+               )}
+               
+               {/* CASO 2: É o modal bônus E NÃO desbloqueou (não deve acontecer com a lógica atual) */}
+               {/* Este caso não é mais necessário, pois a lógica agora envia para /creditos */}
+
+               {/* CASO 3: É um modal de mundo normal (1-4) E desbloqueou */}
+               {!resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
+                 <button className='btn next-level-btn' onClick={handleProximoMundo}>
+                   Ir para o próximo mundo
+                 </button>
+               )}
+
+               {/* CASO 4: É um modal de mundo normal (1-4) E NÃO desbloqueou */}
+               {!resultadoMundo.isBonus && !resultadoMundo.desbloqueado && (
+                  <button className="btn map-btn" onClick={handleVoltarAoMapa}>
+                    <div></div>
+                    Voltar ao Mapa
+                  </button>
+               )}
            </div>
          </div>
-      </Modal>
-
-    <Modal isOpen={isFimDoMundoOpen}
-      onClose={handleVoltarAoMapa}
-      variant="feedback">
-        <div className="feedback-content">
-          <div className="feedback-stats">
-              <p>{resultadoMundo.mensagem}</p>
-              {resultadoMundo.desbloqueado && (
-                <button className='btn next-level-btn' onClick={handleProximoMundo}>
-                  Ir para o próximo mundo
-                </button>
-              )}
-          </div>
-        </div>
-      </Modal>
-    </div>
-  );
+       </Modal>
+     </div>
+   );
 }
 export default Fase;
