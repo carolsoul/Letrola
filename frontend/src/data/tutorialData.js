@@ -73,4 +73,18 @@ export const tutorials = {
       text: 'clique e arraste o mouse quando encontrar uma sobremesa!'
     }
   ],
+  '6': [
+    {
+      image: '/tutorial-4-1.svg',
+      text: 'Preste atenção no quadrado de dicas do caça-palavras.'
+    },
+    {
+      image: '/tutorial-4-2.svg',
+      text: 'Procure as palaras no painel.'
+    },
+    { 
+      image: '/tutorial-4-3.svg',
+      text: 'clique e arraste o mouse quando encontrar uma sobremesa!'
+    }
+  ],
 };
