@@ -61,30 +61,30 @@ export const tutorials = {
   // Tutorial para o Mundo 5
   '5': [
     {
-      image: '/tutorial-4-1.svg',
-      text: 'Preste atenção no quadrado de dicas do caça-palavras.'
+      image: '/tutorial-5-1.svg',
+      text: 'Clique em uma carta para ver a imagem.'
     },
     {
-      image: '/tutorial-4-2.svg',
-      text: 'Procure as palaras no painel.'
+      image: '/tutorial-5-2.svg',
+      text: 'Tente encontrar a carta com a palavra igual.'
     },
     { 
-      image: '/tutorial-4-3.svg',
-      text: 'clique e arraste o mouse quando encontrar uma sobremesa!'
+      image: '/tutorial-5-3.svg',
+      text: 'Encontre todos os pares para vencer!'
     }
   ],
   '6': [
     {
-      image: '/tutorial-4-1.svg',
-      text: 'Preste atenção no quadrado de dicas do caça-palavras.'
+      image: '/modal-green.svg',
+      text: 'Ajude o Abú a alcançar o guaxinim fugitivo!'
     },
     {
-      image: '/tutorial-4-2.svg',
-      text: 'Procure as palaras no painel.'
+      image: '/modal-green.svg',
+      text: 'Para avançar, resolva a conta de matemática que aparece.'
     },
-    { 
-      image: '/tutorial-4-3.svg',
-      text: 'clique e arraste o mouse quando encontrar uma sobremesa!'
+    {
+      image: '/modal-green.svg',
+      text: 'Acerte a resposta correta para o Abú correr mais rápido!'
     }
   ],
 };
