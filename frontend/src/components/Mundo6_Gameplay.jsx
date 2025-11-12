@@ -1,498 +1,517 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
+import { TextureLoader } from 'three';
+import { useLoader } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import Modal from "./Modal.jsx";
 import Cronometro from "./Cronometro.jsx";
-import ScoreDisplay from "./ScoreDisplay.jsx"
+import ScoreDisplay from "./ScoreDisplay.jsx";
 import { buscarDesafiosDaFase } from "../services/apiDesafioBonus.js";
 import { useAudio } from "../hooks/useAudio";
 import TutorialModal from "./TutorialModal.jsx";
 import { tutorials } from "../data/tutorialData.js";
-import '../styles/Mundo6.css'; // CSS Atualizado
+import '../styles/Mundo6.css';
 
 // --- Constantes ---
 const MUNDO_ID = 6;
-const TEMPO_3_ESTRELAS = 120; // 2 minutos
-const TEMPO_2_ESTRELAS = 240; // 4 minutos
-const TEMPO_1_ESTRELA = 360; // 6 minutos
-const POSICAO_JOGADOR_Y = 80; // Posição Y (em %) do jogador na tela
+const TEMPO_3_ESTRELAS = 120; 
+const TEMPO_2_ESTRELAS = 240;
+const TEMPO_1_ESTRELA = 360;
 
-// --- Função Utilitária ---
 const formatTime = (timeInMs) => {
-    const totalSeconds = Math.floor(timeInMs / 1000);
-    const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-    const sec = String(totalSeconds % 60).padStart(2, "0");
-    return `${min}:${sec}`;
+    const totalSeconds = Math.floor(timeInMs / 1000);
+    const min = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const sec = String(totalSeconds % 60).padStart(2, "0");
+    return `${min}:${sec}`;
 };
 
-// --- Sub-componentes do Jogo ---
+// --- Sub-componentes 3D ---
 
-// Jogador (Macaco)
-const Player = ({ raia, sprite }) => {
-  const posicoesRaia = ['-80%', '0%', '80%']; // Posições X para Esquerda, Meio, Direita
-  return (
-    <img
-      src={sprite}
-      className="sprite-jogador"
-      style={{ 
-        transform: `translateX(${posicoesRaia[raia]})`,
-        bottom: `${80 - POSICAO_JOGADOR_Y}%` 
-      }}
-      alt="Jogador"
-    />
-  );
+// Jogador (macaquinho) em 3D - Corrigido para usar targetLane corretamente
+const Player3D = ({ targetLane }) => {
+  const texture = useLoader(TextureLoader, '/monkey-back.svg');
+  const ref = useRef();
+  
+  useFrame((state, delta) => {
+    if (!ref.current) return;
+    
+    const targetX = targetLane * 2; 
+    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, 10 * delta);
+  });
+  return (
+    <sprite 
+      ref={ref} 
+      position={[0, 0, 4]} // Posição inicial neutra, ajustada por useFrame
+      scale={[3.5, 3.5, 1]} 
+      center={[0.5, 0]} // Centraliza o sprite para aparecer inteiro
+      renderOrder={2} // Aumentado para garantir prioridade sobre o baú
+    > 
+      <spriteMaterial map={texture} transparent />
+    </sprite>
+  );
 };
 
-// Guaxinim
-const Guaxinim = ({ raia, yPos, sprite, pego }) => {
-  const posicoesRaia = ['-80%', '-80%', '80%'];
-  return (
-    <img
-      src={sprite}
-      className={`sprite-guaxinim ${pego ? 'pego' : ''}`}
-      style={{
-        transform: `translateX(${posicoesRaia[raia]}) scale(0.7)`,
-        top: `${70 - yPos}%`
-      }}
-      alt="Guaxinim"
-    />
-  );
+// Guaxinim como sprite 2D
+const Guaxinim3D = ({ distance, scale }) => {
+  const texture = useLoader(TextureLoader, '/raccoon-back.svg');
+  const ref = useRef();
+  
+  useFrame((state, delta) => {
+    if (!ref.current) return;
+    
+    // Movimento suave para a posição Z
+    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, distance, 3 * delta);
+    
+    const baseScale = scale[0];
+    const scaleFactor = Math.max(1, 3 + distance / 10);
+    const newScale = baseScale * scaleFactor;
+    ref.current.scale.set(newScale, newScale, 1);
+  });
+
+ return (
+    <sprite 
+      ref={ref} 
+      position={[0, 0, distance]}
+      scale={scale} 
+      center={[0.5, 0]} // Ajustado: centralizado horizontalmente, ancorado na base para aparecer inteiro
+    >
+      <spriteMaterial map={texture} transparent />
+    </sprite>
+  );
 };
 
-// Caixa de Presente
-const CaixaPresente = ({ caixa, onCollide }) => {
-  const posicoesRaia = ['-80%', '0%', '80%'];
-  
-  // Chama a colisão quando a animação termina (quando chega no jogador)
-  const handleAnimationEnd = () => {
-    onCollide(caixa);
-  };
+// Caixa em 3D (baú)
+useGLTF.preload('/treasure_coins_chest.glb');
+const Caixa3D = ({ position, onCollide, collided }) => { 
+  const meshRef = useRef();
+  const { scene } = useGLTF('/treasure_coins_chest.glb');
+  const sceneClone = React.useMemo(() => scene.clone(), [scene]);
+  useFrame((state, delta) => {
+    if (meshRef.current && !collided) {
+      meshRef.current.position.z += 6 * delta; 
 
-  return (
-    <img
-      src="/presente.svg"
-      className="item-coletavel"
-      style={{
-        transform: `translateX(${posicoesRaia[caixa.raia]})`,
-        animation: `moveItem ${caixa.velocidade}s linear forwards`
-      }}
-      alt="Caixa de Presente"
-      onAnimationEnd={handleAnimationEnd}
-    />
-  );
+      if (meshRef.current.position.z > 0.5) {
+        onCollide();
+      }
+    }
+  });
+
+  return sceneClone ? (
+    <primitive 
+      ref={meshRef} 
+      object={sceneClone} 
+      position={position} 
+      rotation={[0, Math.PI, 0]}
+      scale={[0.2, 0.2, 0.2]}
+      renderOrder={-999}
+    />
+  ) : (
+    <mesh ref={meshRef} position={position}>
+      <boxGeometry args={[0.5, 0.5, 0.5]} />
+      <meshStandardMaterial color="brown" />
+    </mesh>
+  );
 };
 
-// --- Componente: GameHUD (Refatorado) ---
-const GameHUD = ({ onOpenConfig, tempoExibido, tempoDecorridoMs }) => {
-  return (
-    <header>
-      <button className="level-settings-btn" onClick={onOpenConfig}>
-        <img src="/Settings.svg" alt="Configurações" />
-      </button>
-      <div className="two-columns">
-        <ScoreDisplay tempoDecorridoMs={tempoDecorridoMs} />
-      </div>
-      <div className="timer">
-        <img src="/timer.svg" alt="Cronômetro" />
-        <p className="seconds">{tempoExibido}</p>
-      </div>
-    </header>
-  );
+const Scene3D = ({ playerPosition, guaxinimPosition, caixas, onCaixaCollide, collidedCaixas }) => {
+  const groundTexture = useLoader(TextureLoader, '/ground-texture.jpg');
+  const grassTexture = useLoader(TextureLoader, '/grass-texture.jpg');
+  
+  // Configurações para ambas as texturas
+  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+  groundTexture.repeat.set(10, 10);
+  
+  grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+  grassTexture.repeat.set(20, 20);
+  const ref = useRef();
+
+  // Movimento infinito do chão
+  useFrame((state, delta) => {
+    if (ref.current) {
+        groundTexture.offset.y -= 0.5 * delta;
+        grassTexture.offset.y += 0.8 * delta;
+    }
+  });
+
+ return (
+    <>
+      <ambientLight intensity={5} />
+      <pointLight position={[10, 10, 10]} />
+      
+      {/* Gramado como plano maior abaixo da pista */}
+      <mesh position={[0, -1.1, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-2}>
+        <planeGeometry args={[200, 100]} /> {/* Maior para cobrir toda a largura */}
+        <meshStandardMaterial map={grassTexture} />
+      </mesh>
+      
+      {/* Pista sobreposta */}
+      <mesh ref={ref} position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-1}>
+        <planeGeometry args={[20, 100]} />
+        <meshStandardMaterial map={groundTexture} />
+      </mesh>
+
+      <Player3D targetLane={playerPosition} /> 
+
+      <Guaxinim3D distance={guaxinimPosition} scale={[2, 2, 2]} />
+
+      {caixas.map((caixa) => (
+        <Caixa3D 
+          key={caixa.id}
+          position={[caixa.raia * 2 - 2, 0, -10]}
+          onCollide={() => onCaixaCollide(caixa)} 
+          collided={collidedCaixas.includes(caixa.id)}
+        />
+      ))}
+    </>
+  );
 };
 
-// --- Componente: DesafioModal (Refatorado) ---
 const DesafioModal = ({ isOpen, desafio, resposta, onRespostaChange, onSubmit, feedback }) => {
-  if (!isOpen) return null;
+  if (!isOpen) return null;
 
-  return (
-    <Modal isOpen={true} title="" variant="puzzle">
-      <div className="desafio-matematica-container">
-        {desafio ? (
-          <form className="desafio-form" onSubmit={onSubmit}>
-            <label htmlFor="resposta-mat" className="pergunta-mat">
-              {desafio.pergunta}
-            </label>
-            <input
-              id="resposta-mat"
-              type="number"
-              pattern="\d*"
-              value={resposta}
-              onChange={(e) => onRespostaChange(e.target.value)}
-              className={`input-mat ${feedback}`}
-              disabled={!!feedback}
-              autoFocus
-            />
-            <button type="submit" className="btn-responder" disabled={!!feedback}>
-              Responder
-            </button>
-          </form>
-        ) : (
-          <p>Carregando desafio...</p>
-        )}
-      </div>
-    </Modal>
-  );
+  return (
+    <Modal isOpen={true} title="" variant="puzzle">
+      <div className="desafio-matematica-container">
+        {desafio ? (
+          <form className="desafio-form" onSubmit={onSubmit}>
+            <label htmlFor="resposta-mat" className="pergunta-mat">
+              {desafio.pergunta}
+            </label>
+            <input
+              id="resposta-mat"
+              type="number"
+              pattern="\d*"
+              value={resposta}
+              onChange={(e) => onRespostaChange(e.target.value)}
+              className={`input-mat ${feedback}`}
+              disabled={!!feedback}
+              autoFocus
+            />
+            <button type="submit" className="btn-responder" disabled={!!feedback}>
+              Responder
+            </button>
+          </form>
+        ) : (
+          <p>Carregando desafio...</p>
+        )}
+      </div>
+    </Modal>
+  );
 };
-
 
 // --- Componente Principal ---
 function Mundo6_Gameplay({ jogador, onFaseCompleta }) {
-  const navigate = useNavigate();
-  const { mundoId, faseId } = useParams();
-  const { playSound, isMusicMuted, toggleMusic, isSfxMuted, toggleSfx } = useAudio();
+  const navigate = useNavigate();
+  const { mundoId, faseId } = useParams();
+  const { playSound, isMusicMuted, toggleMusic, isSfxMuted, toggleSfx } = useAudio();
 
-  const mundo_id = parseInt(mundoId);
-  const fase_id = parseInt(faseId);
+  const mundo_id = parseInt(mundoId);
+  const fase_id = parseInt(faseId);
 
-  // Estados de Jogo
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [estadoJogo, setEstadoJogo] = useState("carregando");
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [tempoInicioFase, setTempoInicioFase] = useState(Date.now());
-  const [tempoDecorridoParaScore, setTempoDecorridoParaScore] = useState(0);
-  const [tempoExibido, setTempoExibido] = useState("00:00");
+  // Estados de Jogo
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [estadoJogo, setEstadoJogo] = useState("carregando");
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [tempoInicioFase, setTempoInicioFase] = useState(Date.now());
+  const [tempoDecorridoParaScore, setTempoDecorridoParaScore] = useState(0);
+  const [tempoExibido, setTempoExibido] = useState("00:00");
+  const [tempo, setTempo] = useState({ inicio: Date.now(), decorrido: 0 });
+  
+  // Estados do Desafio e Progresso
+  const [desafios, setDesafios] = useState([]);
+  const [totalDesafiosIniciais, setTotalDesafiosIniciais] = useState(0);
+  const [caixas, setCaixas] = useState([]);
+  const [indiceDesafio, setIndiceDesafio] = useState(0);
+  const [caixasColetadas, setCaixasColetadas] = useState(0);
+  const [perseguicaoFinalAtiva, setPerseguicaoFinalAtiva] = useState(false);
+  const [collidedCaixas, setCollidedCaixas] = useState([]); 
+  
+  // Posição
+  const [raiaJogador, setRaiaJogador] = useState(1); // 0: esquerda, 1: centro, 2: direita
+  const [guaxinimDistance, setGuaxinimDistance] = useState(50); // Distância em unidades 3D
 
-  // Estados do Desafio
-  const [desafios, setDesafios] = useState([]);
-  const [caixas, setCaixas] = useState([]); // Caixas ativas na tela
-  const [indiceDesafio, setIndiceDesafio] = useState(0); // Qual desafio estamos
-  const [caixasColetadas, setCaixasColetadas] = useState(0);
-  // ✅ RENOMEADO: De 'jogoFinalizado' para 'perseguicaoFinalAtiva'
-  const [perseguicaoFinalAtiva, setPerseguicaoFinalAtiva] = useState(false);
-  
-  // Posição
-  const [raiaJogador, setRaiaJogador] = useState(1); // 0: Esquerda, 1: Meio, 2: Direita
-  const [raiaGuaxinim, setRaiaGuaxinim] = useState(1);
-  const [yGuaxinim, setYGuaxinim] = useState(25); // Posição Y do guaxinim (em %)
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [desafioAtual, setDesafioAtual] = useState(null);
+  const [respostaUsuario, setRespostaUsuario] = useState("");
+  const [feedback, setFeedback] = useState("");
 
-  // Modal de Matemática
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [desafioAtual, setDesafioAtual] = useState(null);
-  const [respostaUsuario, setRespostaUsuario] = useState("");
-  const [feedback, setFeedback] = useState("");
+  // Refs
+  const spawIntervalRef = useRef(null);
+  const tempoDecorridoRef = useRef(0);
+  const estadoJogoRef = useRef(estadoJogo);
 
-  // --- Refs ---
-  const spawIntervalRef = useRef(null); // Timer para spawnar caixas
-  // ✅ ADICIONADO: Refs para estabilidade
-  const tempoDecorridoRef = useRef(0);
-  const estadoJogoRef = useRef(estadoJogo);
+  useEffect(() => {
+    const audio = playSound('musica-mundo-4', true);
+    return () => { if (audio) audio.pause(); };
+  }, [playSound]);
 
-  // --- Efeitos ---
-  useEffect(() => {
-    const audio = playSound('musica-mundo-4', true); // Música animada
-    return () => { if (audio) audio.pause(); };
-  }, [playSound]);
+  useEffect(() => {
+    if (fase_id === 1) {
+      const storageKey = `tutorial_mundo_${mundo_id}_visto`;
+      const tutorialJaVisto = sessionStorage.getItem(storageKey);
+      if (!tutorialJaVisto) setIsTutorialOpen(true);
+    }
+  }, [mundo_id, fase_id]);
 
-  useEffect(() => {
-    if (fase_id === 1) {
-      const storageKey = `tutorial_mundo_${mundo_id}_visto`;
-      const tutorialJaVisto = sessionStorage.getItem(storageKey);
-      if (!tutorialJaVisto) setIsTutorialOpen(true);
-    }
-  }, [mundo_id, fase_id]);
-
-  // Carregar desafios
-  const inicializarFase = useCallback(async () => {
-    setEstadoJogo("carregando");
-    setDesafios([]);
-    setCaixas([]);
-    setIndiceDesafio(0);
-    setCaixasColetadas(0);
-    setPerseguicaoFinalAtiva(false); // ✅ RENOMEADO
-    setRaiaJogador(1);
-    setRaiaGuaxinim(1);
-    setTempoInicioFase(Date.now());
-    setTempoDecorridoParaScore(0);
-    setTempoExibido("00:00");
-    setIsModalOpen(false);
+  // Inicialização
+  const inicializarFase = useCallback(async () => {
+    setEstadoJogo("carregando");
+    setDesafios([]);
+    setCaixas([]);
+    setIndiceDesafio(0);
+    setCaixasColetadas(0);
+    setTotalDesafiosIniciais(0);
+    setPerseguicaoFinalAtiva(false);
+    setRaiaJogador(1);
+    setGuaxinimDistance(50);
+    setTempoInicioFase(Date.now());
+    setTempoDecorridoParaScore(0);
+    setTempoExibido("00:00");
+    setIsModalOpen(false);
+    setCollidedCaixas([]);
     
-    if (isTutorialOpen) {
-      setEstadoJogo("jogando"); // Pausado pelo tutorial
-      return;
-    }
+    if (isTutorialOpen) {
+      setEstadoJogo("jogando");
+      return;
+    }
 
-    const desafiosDaApi = await buscarDesafiosDaFase(fase_id);
-    if (desafiosDaApi) {
-      setDesafios(desafiosDaApi);
-      setEstadoJogo("jogando");
-    } else {
-      console.error("Não foi possível carregar os desafios da fase bônus.");
-      setEstadoJogo("erro");
-    }
-  }, [fase_id, isTutorialOpen]);
+    const desafiosDaApi = await buscarDesafiosDaFase(fase_id);
+    if (desafiosDaApi) {
+      setDesafios(desafiosDaApi);
+      setTotalDesafiosIniciais(desafiosDaApi.length);
+      setEstadoJogo("jogando");
+    } else {
+      console.error("Erro ao carregar desafios.");
+      setEstadoJogo("erro");
+    }
+  }, [fase_id, isTutorialOpen]);
 
-  useEffect(() => {
-    if (!jogador) navigate("/");
-    else inicializarFase();
-  }, [jogador, navigate, inicializarFase]);
+  useEffect(() => {
+    if (!jogador) navigate("/");
+    else inicializarFase();
+  }, [jogador, navigate, inicializarFase]);
 
-  // ✅ ADICIONADO: Sincroniza o ref com o estado
-  useEffect(() => {
-    estadoJogoRef.current = estadoJogo;
-  }, [estadoJogo]);
+  useEffect(() => {
+    estadoJogoRef.current = estadoJogo;
+  }, [estadoJogo]);
 
-  // --- Lógica de Finalização (Estável) ---
-  const finalizarFase = useCallback((motivo = 'concluido') => {
-    // ✅ CORRIGIDO: Lê o estado do ref
-    if (estadoJogoRef.current === "finalizado") return;
-    setEstadoJogo("finalizado");
-    clearInterval(spawIntervalRef.current);
-    
-    // ✅ CORRIGIDO: Lê o tempo do ref
-    const tempoFinalSegundos = Math.floor(tempoDecorridoRef.current / 1000);
-    let estrelas = 0;
-    if (motivo === 'concluido') {
-        if (tempoFinalSegundos <= TEMPO_3_ESTRELAS) estrelas = 3;
-        else if (tempoFinalSegundos <= TEMPO_2_ESTRELAS) estrelas = 2;
-        else estrelas = 1;
-    }
-    onFaseCompleta({ estrelas, tempoConclusao: tempoFinalSegundos });
-  }, [onFaseCompleta]); // ✅ Dependências estáveis
+  // Aproximação do Guaxinim
+  useEffect(() => {
+    if (totalDesafiosIniciais > 0) {
+      const progresso = caixasColetadas / totalDesafiosIniciais;
+      const novaDistancia = 50 - (progresso * 40); // De 50 para 10
+      setGuaxinimDistance(novaDistancia);
+    }
+  }, [caixasColetadas, totalDesafiosIniciais]);
 
-  // --- Spawner de Caixas ---
-  useEffect(() => {
-    // ✅ RENOMEADO
-    if (estadoJogo === "jogando" && !isTutorialOpen && !isModalOpen && !perseguicaoFinalAtiva) {
-      // Inicia o spawner de caixas
-      spawIntervalRef.current = setInterval(() => {
-        if (indiceDesafio >= desafios.length) {
-          // Se acabaram os desafios, para de spawnar
-          clearInterval(spawIntervalRef.current);
-          setPerseguicaoFinalAtiva(true); // ✅ RENOMEADO
-          return;
-        }
+  // Finalização
+  const finalizarFase = useCallback((motivo = 'concluido') => {
+          if (estadoJogo === "finalizado") return;
+          setEstadoJogo("finalizado");
+          const tempoFinalSegundos = Math.floor(tempo.decorrido / 1000);
+          let estrelas = 0;
+          if (motivo !== 'tempo_esgotado') {
+              if (tempoFinalSegundos <= TEMPO_3_ESTRELAS) estrelas = 3;
+              else if (tempoFinalSegundos <= TEMPO_2_ESTRELAS) estrelas = 2;
+              else if (tempoFinalSegundos <= TEMPO_1_ESTRELA) estrelas = 1;
+          }
+          onFaseCompleta({ estrelas, tempoConclusao: tempoFinalSegundos });
+      }, [estadoJogo, tempo.decorrido, onFaseCompleta]);
 
-        const novaCaixa = {
-          id: Date.now(), // ID único
-          desafio: desafios[indiceDesafio],
-          raia: Math.floor(Math.random() * 3), // Raia aleatória (0, 1, ou 2)
-          velocidade: 2, // Duração da animação (em segundos)
-        };
-        
-        setCaixas(prev => [...prev, novaCaixa]);
-        setIndiceDesafio(idx => idx + 1); // Avança para o próximo desafio
+  // Spawner
+  useEffect(() => {
+    if (estadoJogo === "jogando" && !isTutorialOpen && !isModalOpen && !perseguicaoFinalAtiva) {
+      spawIntervalRef.current = setInterval(() => {
+        if (caixasColetadas >= totalDesafiosIniciais && totalDesafiosIniciais > 0) {
+          clearInterval(spawIntervalRef.current);
+          setPerseguicaoFinalAtiva(true);
+          return;
+        }
+        if (indiceDesafio >= desafios.length) return;
 
-      }, 3000); // Spawna uma caixa a cada 3 segundos (ajuste)
-    } else {
-      // Pausa o spawner
-      clearInterval(spawIntervalRef.current);
-    }
-    return () => clearInterval(spawIntervalRef.current);
-}, [estadoJogo, isTutorialOpen, isModalOpen, desafios, indiceDesafio, perseguicaoFinalAtiva]); // ✅ RENOMEADO
+        const novaCaixa = {
+          id: Date.now(),
+          desafio: desafios[indiceDesafio],
+          raia: Math.floor(Math.random() * 3),
+        };
+        
+        setCaixas(prev => [...prev, novaCaixa]);
+        setIndiceDesafio(idx => idx + 1);
+      }, 3000);
+    } else {
+      clearInterval(spawIntervalRef.current);
+    }
+    return () => clearInterval(spawIntervalRef.current);
+  }, [estadoJogo, isTutorialOpen, isModalOpen, desafios, indiceDesafio, perseguicaoFinalAtiva, caixasColetadas, totalDesafiosIniciais]);
 
-  // --- Lógica de Perseguição (Guaxinim) ---
-  useEffect(() => {
-    if (perseguicaoFinalAtiva) { // ✅ RENOMEADO
-      // Se o jogo terminou, o guaxinim "desacelera" (vem para perto)
-      // e o macaco o alcança para terminar a fase.
-      setYGuaxinim(60); // Guaxinim vem mais para perto
-      // Simula a captura após um tempo
-      setTimeout(() => {
-        setYGuaxinim(POSICAO_JOGADOR_Y - 5); // Fica bem em cima do macaco
-        playSound('vitoria');
-        finalizarFase('concluido');
-      }, 1500);
-    } else {
-      // Movimento aleatório do guaxinim
-      const moveGuaxinim = setInterval(() => {
-        setRaiaGuaxinim(Math.floor(Math.random() * 3));
-      }, 2000); // Muda de raia a cada 2s
-      return () => clearInterval(moveGuaxinim);
-    }
-  }, [perseguicaoFinalAtiva, finalizarFase, playSound]); // ✅ RENOMEADO
+  // Perseguição Final
+  useEffect(() => {
+    if (perseguicaoFinalAtiva) {
+      setTimeout(() => {
+        setGuaxinimDistance(5); // Perto
+        playSound('vitoria');
+        setTimeout(() => finalizarFase('concluido'), 1000);
+      }, 500);
+    }
+  }, [perseguicaoFinalAtiva, finalizarFase, playSound]);
+
+  // Controles
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (estadoJogo !== "jogando" || isModalOpen || isTutorialOpen) return;
+      if (e.key === "ArrowLeft") setRaiaJogador(raia => Math.max(0, raia - 1));
+      else if (e.key === "ArrowRight") setRaiaJogador(raia => Math.min(2, raia + 1));
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [estadoJogo, isModalOpen, isTutorialOpen]);
+
+  const touchStartX = useRef(0);
+  const handleTouchStart = (e) => { touchStartX.current = e.targetTouches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (estadoJogo !== "jogando" || isModalOpen || isTutorialOpen) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) setRaiaJogador(raia => Math.max(0, raia - 1));
+      else setRaiaJogador(raia => Math.min(2, raia + 1));
+    }
+  };
+
+  // Colisão
+  const handleCaixaCollide = (caixa) => {
+    setCollidedCaixas(prev => [...prev, caixa.id]);
+    setTimeout(() => {
+      setCaixas(prev => prev.filter(c => c.id !== caixa.id));
+    }, 16);
+    if (raiaJogador !== caixa.raia) {
+      playSound('fase-erro');
+      setDesafios(prev => [...prev, caixa.desafio]);
+      return;
+    }
+    playSound("som-pegar-item");
+    setEstadoJogo("pausado");
+    setDesafioAtual(caixa.desafio);
+    setIsModalOpen(true);
+    setFeedback("");
+    setRespostaUsuario("");
+  };
+  
+  const handleVerificarResposta = (e) => {
+    e.preventDefault();
+    if (feedback || !desafioAtual) return;
+
+    if (respostaUsuario.trim() === desafioAtual.resposta) {
+        playSound('fase-acerto');
+        setFeedback("correto");
+        setCaixasColetadas(count => count + 1);
+        
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setEstadoJogo("jogando");
+            setDesafioAtual(null);
+        }, 1000);
+    } else {
+        playSound('fase-erro');
+        setFeedback("incorreto");
+        setDesafios(prev => [...prev, desafioAtual]);
+
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setEstadoJogo("jogando");
+            setDesafioAtual(null);
+        }, 1000);
+    }
+  };
+
+  // Handlers
+  const handleCloseTutorial = () => {
+    sessionStorage.setItem(`tutorial_mundo_${mundo_id}_visto`, 'true');
+    setIsTutorialOpen(false);
+    setTempoInicioFase(Date.now());
+  };
+
+  const onTempoTick = (tempoMs) => {
+        setTempoExibido(formatTime(tempoMs));
+        setTempoDecorridoParaScore(tempoMs);
+        tempoDecorridoRef.current = tempoMs;
+  };
+
+  const handleOpenConfig = () => { playSound('click'); setIsConfigOpen(true); };
+  const handleVoltarAoMapa = () => { playSound('click'); navigate("/mapa-do-jogo", { state: { jogador, mundo_id: MUNDO_ID } }); };
+  const handlePausar = () => { playSound('click'); setEstadoJogo(estadoJogo === 'jogando' ? 'pausado' : 'jogando'); };
+  const handleRetry = () => { playSound('click'); inicializarFase(); };
+  const handleNavigateAjuda = () => { playSound('click'); navigate('/ajuda'); };
+  const handleCloseConfig = () => { playSound('click'); setIsConfigOpen(false); };
+
+  if (estadoJogo === "carregando") return <div className="loading-screen-6">Carregando Desafio...</div>;
+  if (estadoJogo === "erro") return <div className="error-screen-6">Erro ao carregar.</div>;
+
+  return (
+    <section 
+      className="mundo6-section"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} steps={tutorials[mundo_id]} />
+      
+    
+    <Canvas camera={{ position: [0, 5, 10], fov: 75 }} className="pista-canvas">
+      <Scene3D 
+        playerPosition={raiaJogador - 1}
+        guaxinimPosition={-guaxinimDistance}
+        caixas={caixas}
+        onCaixaCollide={handleCaixaCollide}
+        collidedCaixas={collidedCaixas}
+      />
+    </Canvas>
 
 
-  // --- Handlers de Input (Teclado) ---
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (estadoJogo !== "jogando" || isModalOpen || isTutorialOpen) return;
-      
-      e.preventDefault(); // Previne rolagem da página
-      if (e.key === "ArrowLeft") {
-        setRaiaJogador(raia => Math.max(0, raia - 1)); // Vai para esquerda
-      } else if (e.key === "ArrowRight") {
-        setRaiaJogador(raia => Math.min(2, raia + 1)); // Vai para direita
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [estadoJogo, isModalOpen, isTutorialOpen]);
+      <header>
+        <button className="level-settings-btn" onClick={handleOpenConfig}>
+          <img src="/Settings.svg" alt="Config" />
+        </button>
+        <ScoreDisplay tempoDecorridoMs={tempoDecorridoParaScore} />
+        <div className="timer">
+          <img src="/timer.svg" alt="Timer" />
+          <p className="seconds">{tempoExibido}</p>
+        </div>
+      </header>
 
-  // --- Handlers de Input (Toque/Swipe) ---
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
+      {(estadoJogo === "jogando" || estadoJogo === "pausado") && (
+          <Cronometro
+              isPaused={estadoJogo !== 'jogando' || isTutorialOpen || isModalOpen}
+              tempoInicioFase={tempoInicioFase}
+              limiteTempoFase={TEMPO_1_ESTRELA * 1000} 
+              onTempoTick={onTempoTick}
+              onFaseTermina={() => finalizarFase('tempo_esgotado')}
+          />
+      )}
+      
+      <DesafioModal
+        isOpen={isModalOpen}
+        desafio={desafioAtual}
+        resposta={respostaUsuario}
+        onRespostaChange={setRespostaUsuario}
+        onSubmit={handleVerificarResposta}
+        feedback={feedback}
+      />
 
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.targetTouches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.targetTouches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (estadoJogo !== "jogando" || isModalOpen || isTutorialOpen) return;
-    
-    const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) { // Limite mínimo de swipe
-      if (diff > 0) { // Swipe para Esquerda
-        setRaiaJogador(raia => Math.max(0, raia - 1));
-      } else { // Swipe para Direita
-        setRaiaJogador(raia => Math.min(2, raia + 1));
-      }
-    }
-    // Reseta os valores
-    touchStartX.current = 0;
-    touchEndX.current = 0;
-  };
-
-
-  // --- Lógica de Colisão e Puzzle ---
-  const handleCollision = (caixaColidida) => {
-    // Remove a caixa da tela
-    setCaixas(prev => prev.filter(c => c.id !== caixaColidida.id));
-
-    // Se o jogador estiver na raia errada, não abre o modal
-    if (raiaJogador !== caixaColidida.raia) {
-      playSound('fase-erro'); // Som de "perder" a caixa
-      return;
-    }
-
-    // Colisão correta: Pausa o jogo e abre o modal
-    playSound("som-pegar-item");
-    setEstadoJogo("pausado");
-    setDesafioAtual(caixaColidida.desafio);
-    setIsModalOpen(true);
-    setFeedback("");
-    setRespostaUsuario("");
-  };
-  
-  const handleVerificarResposta = (e) => {
-    e.preventDefault();
-    if (feedback || !desafioAtual) return;
-
-    if (respostaUsuario.trim() === desafioAtual.resposta) {
-        playSound('fase-acerto');
-        setFeedback("correto");
-        setCaixasColetadas(count => count + 1); // Incrementa caixas corretas
-        
-        setTimeout(() => {
-            setIsModalOpen(false);
-            setEstadoJogo("jogando"); // Retoma o jogo
-            setDesafioAtual(null);
-        }, 1000);
-
-    } else {
-        playSound('fase-erro');
-        setFeedback("incorreto");
-        setTimeout(() => {
-            setFeedback("");
-            setRespostaUsuario("");
-        }, 1000);
-    }
-  };
-
-
-  // --- Outros Handlers ---
-  const handleCloseTutorial = () => {
-    sessionStorage.setItem(`tutorial_mundo_${mundo_id}_visto`, 'true');
-    setIsTutorialOpen(false);
-    setTempoInicioFase(Date.now()); // Inicia o tempo
-  };
-
-  const onTempoTick = (tempoMs) => {
-        setTempoExibido(formatTime(tempoMs, "ms"));
-        setTempoDecorridoParaScore(tempoMs);
-        tempoDecorridoRef.current = tempoMs; // ✅ CORRIGIDO: Atualiza o ref
-  };
-
-  const handleOpenConfig = () => { playSound('click'); setIsConfigOpen(true); };
-  const handleVoltarAoMapa = () => { playSound('click'); navigate("/mapa-do-jogo", { state: { jogador, mundo_id: MUNDO_ID } }); };
-  const handlePausar = () => { playSound('click'); setEstadoJogo(estadoJogo === 'jogando' ? 'pausado' : 'jogando'); };
-  const handleRetry = () => { playSound('click'); inicializarFase(); };
-  const handleNavigateAjuda = () => { playSound('click'); navigate('/ajuda'); };
-  const handleCloseConfig = () => { playSound('click'); setIsConfigOpen(false); };
-
-  if (estadoJogo === "carregando") return <div className="loading-screen-6">Carregando Desafio Bônus...</div>;
-  if (estadoJogo === "erro") return <div className="error-screen-6">Erro ao carregar o Desafio Bônus.</div>;
-
-  return (
-    <section 
-      className="mundo6-section"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} steps={tutorials[mundo_id]} />
-      
-      {/* Cenário "3D" Falso */}
-      <img
-          src="/bonus-bg.svg"
-          alt="fundo-de-floresta"
-          className="level-bonus-bg"
-        />
-
-      <div className="mundo6-cenario">
-        <div className="pista"></div>
-      </div>
-
-      {/* Container dos Sprites */}
-      <div className="sprites-container">
-        <Guaxinim 
-          raia={raiaGuaxinim} 
-          yPos={yGuaxinim} 
-          sprite="/raccoon-back.svg" 
-          pego={perseguicaoFinalAtiva} // ✅ RENOMEADO
-        />
-        <Player 
-          raia={raiaJogador} 
-          sprite="/monkey-back.svg" 
-        />
-        {caixas.map(caixa => 
-          <CaixaPresente key={caixa.id} caixa={caixa} onCollide={handleCollision} />
-        )}
-      </div>
-      
-      {/* ✅ REFATORADO: HUD */}
-      <GameHUD
-        onOpenConfig={handleOpenConfig}
-        tempoExibido={tempoExibido}
-        tempoDecorridoMs={tempoDecorridoParaScore}
-      />
-
-      {(estadoJogo === "jogando" || estadoJogo === "pausado") && (
-          <Cronometro
-              isPaused={estadoJogo !== 'jogando' || isTutorialOpen || isModalOpen}
-              tempoInicioFase={tempoInicioFase}
-              limiteTempoFase={TEMPO_1_ESTRELA * 1000} 
-              onTempoTick={onTempoTick}
-              onFaseTermina={() => finalizarFase('tempo_esgotado')}
-          />
-      )}
-      
-      {/* ✅ REFATORADO: Modal de Desafio */}
-      <DesafioModal
-        isOpen={isModalOpen}
-        desafio={desafioAtual}
-        resposta={respostaUsuario}
-        onRespostaChange={setRespostaUsuario}
-        onSubmit={handleVerificarResposta}
-        feedback={feedback}
-      />
-
-      {/* Modal de Configuração */}
-      <Modal isOpen={isConfigOpen} onClose={handleCloseConfig} variant="config">
-          <div className="btn-level-grid">
-              <button className={`btn music-btn ${isMusicMuted ? 'grayscale' : ''}`} onClick={toggleMusic}><div></div> música</button>
-              <button className={`btn effect-btn ${isSfxMuted ? 'grayscale' : ''}`} onClick={toggleSfx}><div></div> efeitos</button>
-              <button className="btn map-btn" onClick={handleVoltarAoMapa}><div></div>🏠</button>
-              <button className="btn stop-btn" onClick={handlePausar}><div></div>{estadoJogo === 'pausado' ? '▶' : '⏸'}</button>
-              <button className="btn retry-btn" onClick={handleRetry}><div></div>↩</button>
-              <button className="btn help-btn" onClick={handleNavigateAjuda}><div></div> ajuda</button>
-              <button className="btn skip-btn" onClick={handleCloseConfig}><div></div> fechar</button>
-          </div>
-      </Modal>
-    </section>
-  );
+      <Modal isOpen={isConfigOpen} onClose={handleCloseConfig} variant="config">
+        <div className="btn-level-grid">
+            <button className={`btn music-btn ${isMusicMuted ? 'grayscale' : ''}`} onClick={toggleMusic}><div></div> música</button>
+            <button className={`btn effect-btn ${isSfxMuted ? 'grayscale' : ''}`} onClick={toggleSfx}><div></div> efeitos</button>
+            <button className="btn map-btn" onClick={handleVoltarAoMapa}><div></div>🏠</button>
+            <button className="btn stop-btn" onClick={handlePausar}><div></div>{estadoJogo === 'pausado' ? '▶' : '⏸'}</button>
+            <button className="btn retry-btn" onClick={handleRetry}><div></div>↩</button>
+            <button className="btn help-btn" onClick={handleNavigateAjuda}><div></div> ajuda</button>
+            <button className="btn skip-btn" onClick={handleCloseConfig}><div></div> fechar</button>
+        </div>
+    </Modal>
+  </section>
+  )
 }
-
 export default Mundo6_Gameplay;
