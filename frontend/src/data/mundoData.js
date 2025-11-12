@@ -125,5 +125,4 @@ export const mundos = {
       },
     ]
 },
-// Mais mundos podem ser adicionados aqui
   }
