@@ -561,7 +561,7 @@ function Mundo1_Gameplay({ jogador, onFaseCompleta }) {
 
       {estadoJogo === "jogando" && (
         <Cronometro
-          isPaused={isPuzzleOpen || estadoJogo === "pausado" || isTutorialOpen}
+          isPaused={estadoJogo === "pausado" || isTutorialOpen}
           tempoInicioFase={tempoInicioFase}
           limiteTempoFase={TEMPO_1_ESTRELA * 1000}
           onTempoTick={handleTempoTick}
