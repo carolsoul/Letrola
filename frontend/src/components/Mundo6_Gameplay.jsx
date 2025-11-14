@@ -74,13 +74,32 @@ const Player3D = ({ targetLane }) => {
 };
 
 // Guaxinim como sprite 2D
+// Guaxinim como sprite 2D (AGORA ANIMADO)
 const Guaxinim3D = ({ distance, scale }) => {
-  const texture = useLoader(TextureLoader, '/raccoon-back.svg');
+  // <<< NOVO: Troque pelo caminho do seu spritesheet do guaxinim
+  const texture = useLoader(TextureLoader, '/raccoon-sprite-sheet.png'); 
   const ref = useRef();
+
+  // --- Lógica de Animação (copiada do Player3D) ---
   
+  // <<< NOVO: Ajuste o número total de frames da sua imagem
+  const totalFrames = 2; 
+  const frameWidth = 1 / totalFrames;
+  
+  const [currentFrame, setCurrentFrame] = useState(0);
+  
+  // <<< NOVO: Ajuste a velocidade da animação (frames por segundo)
+  const frameRate = 6; 
+  
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.set(frameWidth, 1);
+  let timeAccumulator = useRef(0);
+  // --- Fim da Lógica de Animação ---
+
   useFrame((state, delta) => {
     if (!ref.current) return;
     
+    // --- Lógica de Posição (do Guaxinim original) ---
     // Movimento suave para a posição Z
     ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, distance, 3 * delta);
     
@@ -88,6 +107,15 @@ const Guaxinim3D = ({ distance, scale }) => {
     const scaleFactor = Math.max(1, 3 + distance / 10);
     const newScale = baseScale * scaleFactor;
     ref.current.scale.set(newScale, newScale, 1);
+    
+    // --- Lógica de Animação de Spritesheet (do Player3D) ---
+    timeAccumulator.current += delta;
+    if (timeAccumulator.current > 1 / frameRate) {
+      const nextFrame = (currentFrame + 1) % totalFrames;
+      setCurrentFrame(nextFrame);
+      texture.offset.x = nextFrame * frameWidth;
+      timeAccumulator.current = 0;
+    }
   });
 
  return (
@@ -95,7 +123,7 @@ const Guaxinim3D = ({ distance, scale }) => {
       ref={ref} 
       position={[0, 0, distance]}
       scale={scale} 
-      center={[0.5, 0]} // Ajustado: centralizado horizontalmente, ancorado na base para aparecer inteiro
+      center={[0.5, 0]} 
     >
       <spriteMaterial map={texture} transparent />
     </sprite>
