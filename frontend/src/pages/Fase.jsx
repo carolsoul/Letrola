@@ -20,7 +20,9 @@ const formatTime = (time, unit = 'ms') => {
 };
 
 // Constantes da fase
-const TEMPO_3_ESTRELAS = 60; // em segundos
+const TEMPO_3_ESTRELAS = 60;
+const TEMPO_2_ESTRELAS = 180;
+const TEMPO_1_ESTRELA = 300;
 const MINIMO_ESTRELAS_AVANCAR = 11;
 const TOTAL_ESTRELAS_JOGO = 75; // 15 estrelas * 5 mundos
 
@@ -38,13 +40,11 @@ function Fase() {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [resultadoFinal, setResultadoFinal] = useState({ title: "", estrelas: 0, tempoConclusao: 0, proximaMeta: "" });
   const [isFimDoMundoOpen, setIsFimDoMundoOpen] = useState(false);
-  // Adicionado 'isBonus' para controlar o modal de fim de jogo
   const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, desbloqueado: false, mensagem: "", isBonus: false });
-  // REMOVIDO: const [gameKey, setGameKey] = useState(Date.now());
+
 
   // Lida com a conclusão de uma fase
   const handleFaseCompleta = useCallback(async (resultado) => {
-    // Toca o som de vitória/derrota
     if (resultado.estrelas > 0) {
       playSound('vitoria');
     } else {
@@ -62,31 +62,28 @@ function Fase() {
 
     // CASO 1: É A ÚLTIMA FASE DO MUNDO BÔNUS (Mundo 6)
     if (mundo_id === 6 && fase_id === 1 && resultado.estrelas > 0) {
-        // Leva direto para os créditos
         navigate('/creditos');
         return;
     }
 
     // CASO 2: É A ÚLTIMA FASE DO MUNDO 5 (Fim do jogo principal)
     if (mundo_id === 5 && fase_id === 5 && resultado.estrelas > 0) {
-        // Verifica o total de estrelas de TODOS os mundos (1-5)
         const totalEstrelasJogador = await buscarTotalEstrelas(jogador.id);
         const bonusDesbloqueado = totalEstrelasJogador >= TOTAL_ESTRELAS_JOGO;
 
         if (bonusDesbloqueado) {
-            // Mostrar o modal de bônus
             setResultadoMundo({
                 totalEstrelas: totalEstrelasJogador,
                 desbloqueado: true,
-                isBonus: true, // Flag para o modal
+                isBonus: true,
                 mensagem: `UAU! Você coletou todas as ${TOTAL_ESTRELAS_JOGO} estrelas! Uma fase bônus secreta foi desbloqueada!`
             });
             setIsFimDoMundoOpen(true);
         } else {
-            // Não tem estrelas o suficiente, vai para os créditos
+
             navigate('/creditos');
         }
-        return; // Importante: Sai da função
+        return;
     }
 
     // CASO 3: É A ÚLTIMA FASE DOS MUNDOS 1-4
@@ -111,10 +108,12 @@ function Fase() {
     let titulo = "";
 
     if (resultado.estrelas === 0) {
-         metaTexto = `Tente novamente! Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
+         metaTexto = `Que pena! Tente novamente para ganhar pelo menos 1 estrela.`;
+    } else if (resultado.estrelas < 2) {
+         metaTexto = `Tente novamente! Para 2 estrelas, termine em ${formatTime(TEMPO_2_ESTRELAS, 's')}.`;
     } else if (resultado.estrelas < 3) {
          metaTexto = `Tente novamente! Para 3 estrelas, termine em ${formatTime(TEMPO_3_ESTRELAS, 's')}.`;
-    } else { // resultado.estrelas === 3
+    } else { 
          metaTexto = "Parabéns! Você foi muito rápido!";
     }
     
@@ -149,15 +148,13 @@ function Fase() {
     const proxima_fase_id = fase_id + 1;
     setIsFeedbackOpen(false);
     navigate(`/mundo/${mundo_id}/fase/${proxima_fase_id}`, { state: { jogador } });
-    // REMOVIDO: setGameKey(Date.now());
   };
 
   const handleRetry = () => {
     playSound('click');
     setIsFeedbackOpen(false);
-    // Navega para a mesma URL para forçar re-render dos filhos
+
     navigate(`/mundo/${mundo_id}/fase/${fase_id}`, { state: { jogador }, replace: true });
-    // REMOVIDO: setGameKey(Date.now());
    };
 
   const handleProximoMundo = () => {
@@ -178,7 +175,7 @@ function Fase() {
 
    const renderGameplay = () => {
     switch (mundo_id) {
-      // REMOVIDO: key={gameKey} de todas as chamadas
+
       case 1:
         return <Mundo1_Gameplay jogador={jogador} onFaseCompleta={handleFaseCompleta} />;
       case 2:
@@ -250,17 +247,14 @@ function Fase() {
                  </button>
                )}
                
-               {/* CASO 2: É o modal bônus E NÃO desbloqueou (não deve acontecer com a lógica atual) */}
-               {/* Este caso não é mais necessário, pois a lógica agora envia para /creditos */}
-
-               {/* CASO 3: É um modal de mundo normal (1-4) E desbloqueou */}
+               {/* CASO 2: É um modal de mundo normal (1-4) E desbloqueou */}
                {!resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
                  <button className='btn next-level-btn' onClick={handleProximoMundo}>
                    Ir para o próximo mundo
                  </button>
                )}
 
-               {/* CASO 4: É um modal de mundo normal (1-4) E NÃO desbloqueou */}
+               {/* CASO 3: É um modal de mundo normal (1-4) E NÃO desbloqueou */}
                {!resultadoMundo.isBonus && !resultadoMundo.desbloqueado && (
                   <button className="btn map-btn" onClick={handleVoltarAoMapa}>
                     <div></div>
