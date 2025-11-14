@@ -32,24 +32,43 @@ const formatTime = (timeInMs) => {
 
 // Jogador (macaquinho) em 3D - Corrigido para usar targetLane corretamente
 const Player3D = ({ targetLane }) => {
-  const texture = useLoader(TextureLoader, '/monkey-back.svg');
+  const texture = useLoader(THREE.TextureLoader, '/monkey-sprite-sheet.png');
   const ref = useRef();
-  
+  const totalFrames = 20; 
+  const frameWidth = 1 / totalFrames;
+
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const frameRate = 60; 
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.set(frameWidth, 1);
+  let timeAccumulator = useRef(0);
+
   useFrame((state, delta) => {
     if (!ref.current) return;
     
     const targetX = targetLane * 2; 
     ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targetX, 10 * delta);
+
+    timeAccumulator.current += delta;
+    if (timeAccumulator.current > 1 / frameRate) {
+      const nextFrame = (currentFrame + 1) % totalFrames;
+      setCurrentFrame(nextFrame);
+      texture.offset.x = nextFrame * frameWidth;
+      timeAccumulator.current = 0;
+    }
   });
+
   return (
     <sprite 
       ref={ref} 
-      position={[0, 0, 4]} // Posição inicial neutra, ajustada por useFrame
+      position={[0, 0, 4]} 
       scale={[3.5, 3.5, 1]} 
-      center={[0.5, 0]} // Centraliza o sprite para aparecer inteiro
-      renderOrder={2} // Aumentado para garantir prioridade sobre o baú
-    > 
-      <spriteMaterial map={texture} transparent />
+      center={[0.5, 0]}
+      renderOrder={2}
+    >
+      <spriteMaterial map={texture} transparent 
+        alphaTest={0.5}
+      />
     </sprite>
   );
 };
@@ -131,8 +150,7 @@ const Scene3D = ({ playerPosition, guaxinimPosition, caixas, onCaixaCollide, col
   // Movimento infinito do chão
   useFrame((state, delta) => {
     if (ref.current) {
-        groundTexture.offset.y -= 0.5 * delta;
-        grassTexture.offset.y += 0.8 * delta;
+        groundTexture.offset.y += 0.5 * delta;
     }
   });
 
@@ -245,7 +263,7 @@ function Mundo6_Gameplay({ jogador, onFaseCompleta }) {
   const estadoJogoRef = useRef(estadoJogo);
 
   useEffect(() => {
-    const audio = playSound('musica-mundo-4', true);
+    const audio = playSound('musica-mundo-6', true);
     return () => { if (audio) audio.pause(); };
   }, [playSound]);
 
