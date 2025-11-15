@@ -261,6 +261,14 @@
   cursor: pointer;
 }
 
+.historia-btn[disabled] {
+  opacity: 0.5; /* Deixa o botão semi-transparente */
+  cursor: not-allowed; /* Altera o cursor para indicar que não é clicável */
+  pointer-events: none; /* Garante que nenhum evento de clique seja disparado */
+  filter: grayscale(100%); /* Opcional: deixa o botão em escala de cinza */
+  transition: opacity 0.3s ease, filter 0.3s ease; /* Transição suave */
+}
+
 .level p{
     font-size: 1.8rem;
     font-family: 'Bangers', cursive;
