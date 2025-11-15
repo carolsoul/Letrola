@@ -25,6 +25,7 @@ const settingsRoutes = require('./routes/settings');
 const memoriaRoutes = require('./routes/memoria');
 const bonusRoutes = require('./routes/bonus');
 const desafioBonusRoutes = require('./routes/desafioBonus');
+const placarRoutes = require('./routes/placar');
 
 // --- Registo das Rotas com Prefixos ---
 app.use('/progresso', progressoRoutes);
@@ -38,6 +39,7 @@ app.use('/settings', settingsRoutes);
 app.use('/memoria', memoriaRoutes);
 app.use('/bonus', bonusRoutes);
 app.use('/desafio-bonus', desafioBonusRoutes);
+app.use('/placar', placarRoutes);
 
 // --- Arranque do Servidor ---
 app.listen(PORT, () => {
