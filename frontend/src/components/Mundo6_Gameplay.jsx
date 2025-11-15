@@ -74,21 +74,17 @@ const Player3D = ({ targetLane }) => {
 };
 
 // Guaxinim como sprite 2D
-// Guaxinim como sprite 2D (AGORA ANIMADO)
 const Guaxinim3D = ({ distance, scale }) => {
-  // <<< NOVO: Troque pelo caminho do seu spritesheet do guaxinim
+
   const texture = useLoader(TextureLoader, '/raccoon-sprite-sheet.png'); 
   const ref = useRef();
 
-  // --- Lógica de Animação (copiada do Player3D) ---
-  
-  // <<< NOVO: Ajuste o número total de frames da sua imagem
+  // --- Lógica de Animação 
   const totalFrames = 2; 
   const frameWidth = 1 / totalFrames;
   
   const [currentFrame, setCurrentFrame] = useState(0);
   
-  // <<< NOVO: Ajuste a velocidade da animação (frames por segundo)
   const frameRate = 6; 
   
   texture.wrapS = THREE.RepeatWrapping;
