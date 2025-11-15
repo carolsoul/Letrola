@@ -26,12 +26,31 @@ const TEMPO_1_ESTRELA = 300;
 const MINIMO_ESTRELAS_AVANCAR = 11;
 const TOTAL_ESTRELAS_JOGO = 75; // 15 estrelas * 5 mundos
 
+const historiaBonus = [
+  {
+    imagem: "/historia-bonus-1.svg",
+    dialogo: "A festa está ótima, os amigos animais estão se divertindo muito- Opa! O bolo sumiu!",
+    audio: "/fox-bonus-audio.mp3"  
+  },
+  {
+    imagem: "/historia-bonus-2.svg",
+    dialogo: "Vejam, É um guaxinim! Porque Será que ele pegou o bolo da nossa festa?",
+    audio: "/frog-bonus-audio.mp3" 
+  },
+  {
+    imagem: "/historia-bonus-3.svg",
+    dialogo: "Abú, vá atrás dele! Vamos descobrir o que aconteceu!",
+    audio: "/bear-bonus-audio.mp3" 
+  },
+  
+];
+
 function Fase() {
   const { mundoId, faseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { jogador } = location.state || {};
-  const { playSound } = useAudio();
+  const { playSound, playAudioFile, stopDialogue } = useAudio();
 
   const mundo_id = parseInt(mundoId);
   const fase_id = parseInt(faseId);
@@ -41,6 +60,10 @@ function Fase() {
   const [resultadoFinal, setResultadoFinal] = useState({ title: "", estrelas: 0, tempoConclusao: 0, proximaMeta: "" });
   const [isFimDoMundoOpen, setIsFimDoMundoOpen] = useState(false);
   const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, desbloqueado: false, mensagem: "", isBonus: false });
+
+  const [isBonusStoryOpen, setIsBonusStoryOpen] = useState(false);
+  const [bonusStoryIndex, setBonusStoryIndex] = useState(0);
+  const [isDialoguePlaying, setIsDialoguePlaying] = useState(false);
 
 
   // Lida com a conclusão de uma fase
@@ -68,23 +91,18 @@ function Fase() {
 
     // CASO 2: É A ÚLTIMA FASE DO MUNDO 5 (Fim do jogo principal)
     if (mundo_id === 5 && fase_id === 5 && resultado.estrelas > 0) {
+        // Busca o total de estrelas APÓS salvar o progresso
         const totalEstrelasJogador = await buscarTotalEstrelas(jogador.id);
-        const bonusDesbloqueado = totalEstrelasJogador >= TOTAL_ESTRELAS_JOGO;
+        const bonusDesbloqueado = totalEstrelasJogador >= TOTAL_ESTRELAS_JOGO;
 
-        if (bonusDesbloqueado) {
-            setResultadoMundo({
-                totalEstrelas: totalEstrelasJogador,
-                desbloqueado: true,
-                isBonus: true,
-                mensagem: `UAU! Você coletou todas as ${TOTAL_ESTRELAS_JOGO} estrelas! Uma fase bônus secreta foi desbloqueada!`
-            });
-            setIsFimDoMundoOpen(true);
-        } else {
-
-            navigate('/creditos');
-        }
-        return;
-    }
+        if (bonusDesbloqueado) {
+          setBonusStoryIndex(0);
+          setIsBonusStoryOpen(true);
+        } else {
+          navigate('/creditos');
+        }
+        return; 
+    }
 
     // CASO 3: É A ÚLTIMA FASE DOS MUNDOS 1-4
     if (fase_id === 5 && mundo_id < 5 && resultado.estrelas > 0) {
@@ -168,10 +186,48 @@ function Fase() {
 
   // Nova função para ir ao Bônus
   const handleIrParaBonus = () => {
-    playSound('click');
-    setIsFimDoMundoOpen(false);
-    navigate(`/mundo/6/fase/1`, { state: { jogador } });
+    playSound('click');
+    setIsFimDoMundoOpen(false);
+    navigate(`/mundo/6/fase/1`, { state: { jogador } });
+  };
+
+// --- NOVO HANDLER: Próximo Diálogo Bônus ---
+  const handleProximoBonusDialogo = () => {
+    if (bonusStoryIndex < historiaBonus.length - 1) {
+      setBonusStoryIndex(bonusStoryIndex + 1);
+    } else {
+      // Acabou a história, leva para a fase bônus
+      setIsBonusStoryOpen(false);
+      stopDialogue();
+      navigate(`/mundo/6/fase/1`, { state: { jogador } });
+    }
   };
+
+  // useEffect para TOCAR áudio da história bônus
+  useEffect(() => {
+    if (isBonusStoryOpen && historiaBonus[bonusStoryIndex]) {
+      const audioPath = historiaBonus[bonusStoryIndex].audio;
+      if (audioPath) {
+        setIsDialoguePlaying(true);
+        const audioInstance = playAudioFile(audioPath);
+        if (audioInstance) {
+          audioInstance.onended = () => setIsDialoguePlaying(false);
+        } else {
+          setIsDialoguePlaying(false); // Habilita se áudio falhar
+        }
+      } else {
+        setIsDialoguePlaying(false); // Habilita se não houver áudio
+      }
+    }
+  }, [isBonusStoryOpen, bonusStoryIndex, playAudioFile]);
+
+  // useEffect para PARAR áudio da história bônus
+  useEffect(() => {
+    if (!isBonusStoryOpen) {
+      stopDialogue();
+      setIsDialoguePlaying(false); // Garante reset
+    }
+  }, [isBonusStoryOpen, stopDialogue]);
 
    const renderGameplay = () => {
     switch (mundo_id) {
@@ -240,12 +296,13 @@ function Fase() {
            <div className="feedback-stats">
                <p>{resultadoMundo.mensagem}</p>
                
-               {/* CASO 1: É o modal bônus E desbloqueou */}
-               {resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
-                 <button className='btn next-level-btn' onClick={handleIrParaBonus}>
-                   Jogar Fase Bônus!
-                 </button>
-               )}
+               {/* CASO 1: (Não deve mais acontecer aqui) Bônus desbloqueado */}
+               {resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
+                 <button className='btn next-level-btn' 
+                  onClick={handleIrParaBonus}>
+                   Jogar Fase Bônus!
+                 </button>
+               )}
                
                {/* CASO 2: É um modal de mundo normal (1-4) E desbloqueou */}
                {!resultadoMundo.isBonus && resultadoMundo.desbloqueado && (
@@ -255,7 +312,7 @@ function Fase() {
                )}
 
                {/* CASO 3: É um modal de mundo normal (1-4) E NÃO desbloqueou */}
-               {!resultadoMundo.isBonus && !resultadoMundo.desbloqueado && (
+               {!resultadoMundo.isBonus && !resultadoMundo.desbloqueado &&(
                   <button className="btn map-btn" onClick={handleVoltarAoMapa}>
                     <div></div>
                     Voltar ao Mapa
@@ -264,6 +321,33 @@ function Fase() {
            </div>
          </div>
        </Modal>
+
+        {/* Modal de História Bônus */}
+        {isBonusStoryOpen && historiaBonus[bonusStoryIndex] && (
+          <div className="historia-overlay">
+            <div className="historia-container">
+
+              <img 
+              src={historiaBonus[bonusStoryIndex].imagem} 
+              alt="Cena da história bônus"
+              className="historia-imagem"
+              />
+
+              <p className="historia-dialogo">
+              {historiaBonus[bonusStoryIndex].dialogo}
+              </p>
+
+              <button
+              className={`historia-btn ${isDialoguePlaying ? 'disabled-button' : ''}`}
+              onClick={handleProximoBonusDialogo}
+              disabled={isDialoguePlaying}
+              >
+              {bonusStoryIndex < historiaBonus.length - 1 ? "Próximo" : "Continuar"}
+            </button>
+            </div>
+          </div>
+        )}
+          
      </div>
    );
 }

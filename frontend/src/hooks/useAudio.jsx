@@ -27,6 +27,7 @@ export const useAudio = () => {
   const [isSfxMuted, setIsSfxMuted] = useState(() => localStorage.getItem('isSfxMuted') === 'true');
 
   const currentMusicRef = useRef(null);
+  const currentDialogueRef = useRef(null); // Ref para a fala atual
 
   useEffect(() => {
     localStorage.setItem('isMusicMuted', isMusicMuted);
@@ -72,6 +73,59 @@ export const useAudio = () => {
     return audio;
   }, [isSfxMuted, isMusicMuted]);
 
+  // --- NOVA FUNÇÃO: playAudioFile ---
+  // Esta função toca um áudio diretamente pelo caminho do arquivo (filePath)
+  const playAudioFile = useCallback((filePath, isLoop = false) => {
+    if (!filePath) {
+      console.warn("Nenhum arquivo de áudio fornecido.");
+      return null;
+    }
+
+    const isMusic = isLoop;
+    // Não toca a fala se os efeitos sonoros (SFX) estiverem mutados
+    if (!isMusic && isSfxMuted) return null;
+
+    const audio = new Audio(filePath);
+    audio.loop = isLoop;
+
+    if (isMusic) {
+      audio.volume = MUSIC_VOLUME;
+      if (currentMusicRef.current) {
+        currentMusicRef.current.pause();
+      }
+      audio.muted = isMusicMuted;
+      currentMusicRef.current = audio;
+    } else {
+      // É um SFX (diálogo)
+      audio.volume = SFX_VOLUME;
+      
+      // Para qualquer diálogo que ainda esteja tocando
+      if (currentDialogueRef.current) {
+        currentDialogueRef.current.pause();
+      }
+      currentDialogueRef.current = audio; // Armazena a referência do novo áudio
+    }
+
+    audio.play().catch(error => {
+      if (error.name !== 'NotAllowedError') {
+        console.error(`Erro ao tocar ${filePath}:`, error);
+      }
+    });
+
+    return audio;
+  }, [isSfxMuted, isMusicMuted]); // Adiciona dependências
+
+  // --- NOVA FUNÇÃO: stopDialogue ---
+  // Para a fala atual (útil ao fechar o modal)
+  const stopDialogue = useCallback(() => {
+    if (currentDialogueRef.current) {
+      currentDialogueRef.current.pause();
+      currentDialogueRef.current.currentTime = 0;
+      currentDialogueRef.current = null;
+    }
+  }, []); // Sem dependências, pois só mexe no ref
+
+
   const toggleMusic = useCallback(() => {
     playSound('click');
     setIsMusicMuted(prev => !prev);
@@ -82,5 +136,14 @@ export const useAudio = () => {
     setIsSfxMuted(prev => !prev);
   }, [playSound]);
 
-  return { playSound, isMusicMuted, isSfxMuted, toggleMusic, toggleSfx };
+  // Adiciona as novas funções ao retorno do hook
+  return { 
+    playSound, 
+    playAudioFile, // Adicionado
+    stopDialogue,  // Adicionado
+    isMusicMuted, 
+    isSfxMuted, 
+    toggleMusic, 
+    toggleSfx 
+  };
 };

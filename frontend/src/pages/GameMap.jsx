@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../styles/GameMap.css";
+import "../styles/GameMap.css"; // Certifique-se de que este CSS existe
 import Modal from "../components/Modal";
 import ScoreDisplay from "../components/ScoreDisplay";
 import { buscarFaseAtual, buscarEstrelas, buscarTotalEstrelas } from "../services/apiProgresso";
@@ -13,7 +13,16 @@ function GameMap() {
   const navigate = useNavigate();
 
   const { jogador, mundo_id = 1, checkWorldCompletion } = location.state || {};
-  const { playSound, isMusicMuted, toggleMusic, isSfxMuted, toggleSfx } = useAudio();
+  
+  const { 
+    playSound, 
+    playAudioFile,
+    stopDialogue,
+    isMusicMuted, 
+    toggleMusic, 
+    isSfxMuted, 
+    toggleSfx 
+  } = useAudio();
 
   const dadosMundo = mundos[mundo_id] || mundos[1];
   const levels = [1, 2, 3, 4, 5];
@@ -29,19 +38,18 @@ function GameMap() {
   const [mundosDesbloqueados, setMundosDesbloqueados] = useState({ 1: true });
   const [isFimDoMundoOpen, setIsFimDoMundoOpen] = useState(false);
   const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, mensagem: "" });
+  
+  const [isDialoguePlaying, setIsDialoguePlaying] = useState(false);
 
   const buscarDadosDoJogador = useCallback(async () => {
     if (!jogador || !jogador.id) return;
-
     const faseAtual = await buscarFaseAtual(jogador.id, mundo_id);
     setFaseMaisAlta(faseAtual);
-
     const newStars = {};
     for (const level of levels) {
       newStars[level] = await buscarEstrelas(jogador.id, mundo_id, level);
     }
     setStarsPerLevel(newStars);
-
     const statusMundos = { 1: true };
     for (const idMundo in mundos) {
         if (idMundo > 1) {
@@ -52,8 +60,8 @@ function GameMap() {
         }
     }
     setMundosDesbloqueados(statusMundos);
-
   }, [jogador, mundo_id]);
+
 
   useEffect(() => {
     if (!jogador || !jogador.id) {
@@ -62,14 +70,6 @@ function GameMap() {
     }
     buscarDadosDoJogador();
   }, [jogador, navigate, mundo_id, buscarDadosDoJogador]);
-  
-  // Efeito para tocar a música do mundo
-  useEffect(() => {
-    const audio = playSound(true);
-    return () => {
-      if (audio) audio.pause();
-    };
-  }, [mundo_id, playSound]);
 
   useEffect(() => {
     if (!jogador?.id || !dadosMundo?.historia?.length) {
@@ -88,7 +88,6 @@ function GameMap() {
             const totalEstrelas = await buscarTotalEstrelas(jogador.id, mundo_id);
             const minimoParaAvancar = 11;
             const desbloqueado = totalEstrelas >= minimoParaAvancar;
-            
             setResultadoMundo({
                 totalEstrelas,
                 mensagem: desbloqueado
@@ -100,6 +99,34 @@ function GameMap() {
     };
     verificarFimDeMundo();
   }, [checkWorldCompletion, jogador, mundo_id]);
+
+  useEffect(() => {
+    if (mostrarHistoria && dadosMundo.historia && dadosMundo.historia[indiceHistoria]) {
+      const audioPath = dadosMundo.historia[indiceHistoria].audio;
+      
+      if (audioPath) {
+        setIsDialoguePlaying(true); // Desabilita o botão
+        const audioInstance = playAudioFile(audioPath);
+
+        if (audioInstance) {
+          audioInstance.onended = () => {
+            setIsDialoguePlaying(false);
+          };
+        } else {
+          setIsDialoguePlaying(false);
+        }
+      } else {
+        setIsDialoguePlaying(false);
+      }
+    }
+  }, [mostrarHistoria, indiceHistoria, dadosMundo.historia, playAudioFile]);
+
+  useEffect(() => {
+    if (!mostrarHistoria) {
+      stopDialogue();
+      setIsDialoguePlaying(false);
+    }
+  }, [mostrarHistoria, stopDialogue]);
 
   const handleLevelClick = async (level) => {
     playSound('click');
@@ -124,7 +151,6 @@ function GameMap() {
   };
 
   const handleProximoDialogo = () => {
-    playSound('click');
     if (dadosMundo.historia && indiceHistoria < dadosMundo.historia.length - 1) {
       setIndiceHistoria(indiceHistoria + 1);
     } else {
@@ -175,7 +201,12 @@ function GameMap() {
             <p className="historia-dialogo">
               {dadosMundo.historia[indiceHistoria].dialogo}
             </p>
-            <button className="historia-btn" onClick={handleProximoDialogo}>
+            
+            <button 
+              className={`historia-btn ${isDialoguePlaying ? 'disabled-button' : ''}`} // Adiciona classe condicional
+              onClick={handleProximoDialogo}
+              disabled={isDialoguePlaying}
+            >
               {indiceHistoria < dadosMundo.historia.length - 1 ? "Próximo" : "Jogar"}
             </button>
           </div>
@@ -240,7 +271,6 @@ function GameMap() {
         variant="config"
       >
         <div className="btn-grid">
-          {/* Botões atualizados */}
           <button className={`btn music-btn ${isMusicMuted ? 'grayscale' : ''}`} onClick={handleToggleMusic}>
               <div></div> música
           </button>
@@ -261,6 +291,15 @@ function GameMap() {
             </button>
           ))}
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={isFimDoMundoOpen}
+        onClose={() => setIsFimDoMundoOpen(false)}
+        variant="faseInfo"
+      >
+        <p>{resultadoMundo.mensagem}</p>
+        <p>Total de Estrelas: {resultadoMundo.totalEstrelas}</p>
       </Modal>
     </section>
   );
