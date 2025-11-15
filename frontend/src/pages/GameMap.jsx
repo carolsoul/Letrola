@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../styles/GameMap.css"; // Certifique-se de que este CSS existe
+import "../styles/GameMap.css"; 
 import Modal from "../components/Modal";
+import PlacarModal from "../components/PlacarModal";
 import ScoreDisplay from "../components/ScoreDisplay";
 import { buscarFaseAtual, buscarEstrelas, buscarTotalEstrelas } from "../services/apiProgresso";
 import { verificarAcessoFase } from "../services/apiFases";
@@ -38,7 +39,8 @@ function GameMap() {
   const [mundosDesbloqueados, setMundosDesbloqueados] = useState({ 1: true });
   const [isFimDoMundoOpen, setIsFimDoMundoOpen] = useState(false);
   const [resultadoMundo, setResultadoMundo] = useState({ totalEstrelas: 0, mensagem: "" });
-  
+  const [isPlacarOpen, setIsPlacarOpen] = useState(false);
+
   const [isDialoguePlaying, setIsDialoguePlaying] = useState(false);
 
   const buscarDadosDoJogador = useCallback(async () => {
@@ -165,6 +167,11 @@ function GameMap() {
     setIsConfigOpen(true);
   };
 
+  const handleOpenPlacar = () => {
+    playSound('click');
+    setIsPlacarOpen(true);
+  };
+
   const handleOpenWorldSelect = () => {
     playSound('click');
     setIsWorldSelectOpen(true);
@@ -235,6 +242,11 @@ function GameMap() {
           <img src="/World.svg" alt="Mundos" />
         </button>
 
+        <button className="placar-btn-right" onClick={handleOpenPlacar}>
+          <div></div>
+          <img src="/Trophy.svg" alt="Placar" /> 
+        </button>
+
 
         <div className="levels-container">
           {levels.map((level) => {
@@ -301,6 +313,11 @@ function GameMap() {
         <p>{resultadoMundo.mensagem}</p>
         <p>Total de Estrelas: {resultadoMundo.totalEstrelas}</p>
       </Modal>
+
+      <PlacarModal 
+        isOpen={isPlacarOpen} 
+        onClose={() => setIsPlacarOpen(false)} 
+      />
     </section>
   );
 }
